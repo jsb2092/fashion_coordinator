@@ -1,0 +1,223 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ItemStatus {
+  ACTIVE
+  ARCHIVED
+  DONATED
+  SOLD
+  NEEDS_REPAIR
+  NEEDS_CLEANING
+  BEING_ALTERED
+  STORED
+}
+
+enum Season {
+  SPRING
+  SUMMER
+  FALL
+  WINTER
+  ALL_SEASON
+}
+
+enum OccasionType {
+  CASUAL
+  SMART_CASUAL
+  BUSINESS_CASUAL
+  BUSINESS_FORMAL
+  BLACK_TIE
+  DATE_NIGHT
+  CHURCH
+  TRAVEL
+  OUTDOOR
+  ATHLETIC
+  OTHER
+}
+
+model Person {
+  id           String   @id @default(cuid())
+  clerkUserId  String   @unique
+  name         String
+  email        String?
+  measurements Json?
+  preferences  Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  wardrobeItems WardrobeItem[]
+  outfits       Outfit[]
+  chatSessions  ChatSession[]
+}
+
+model WardrobeItem {
+  id               String     @id @default(cuid())
+  personId         String
+  person           Person     @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  photoUrls        String[]
+  thumbnailUrl     String?
+
+  category         String
+  subcategory      String?
+
+  colorPrimary     String
+  colorSecondary   String?
+  pattern          String?
+
+  brand            String?
+  material         String?
+
+  formalityLevel   Int        @default(3)
+  construction     String?
+  seasonSuitability Season[]  @default([ALL_SEASON])
+  weatherRestrictions String?
+  status           ItemStatus @default(ACTIVE)
+
+  size             String?
+  fit              String?
+  notes            String?
+
+  purchaseDate     DateTime?
+  purchasePrice    Decimal?   @db.Decimal(10, 2)
+  purchaseSource   String?
+
+  timesWorn        Int        @default(0)
+  lastWorn         DateTime?
+
+  aiAnalysis       Json?
+
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  outfitItems      OutfitItem[]
+
+  @@index([personId])
+  @@index([category])
+  @@index([status])
+  @@index([formalityLevel])
+}
+
+model Outfit {
+  id             String       @id @default(cuid())
+  personId       String
+  person         Person       @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  name           String
+  occasionType   OccasionType @default(OTHER)
+  description    String?
+
+  formalityScore Int?
+  seasons        Season[]     @default([ALL_SEASON])
+
+  photoUrl       String?
+
+  notes          String?
+  rating         Int?
+  timesWorn      Int          @default(0)
+  lastWorn       DateTime?
+
+  createdBy      String       @default("manual")
+  aiReasoning    String?
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  items          OutfitItem[]
+
+  @@index([personId])
+  @@index([occasionType])
+}
+
+model OutfitItem {
+  id             String       @id @default(cuid())
+  outfitId       String
+  outfit         Outfit       @relation(fields: [outfitId], references: [id], onDelete: Cascade)
+  wardrobeItemId String
+  wardrobeItem   WardrobeItem @relation(fields: [wardrobeItemId], references: [id], onDelete: Cascade)
+
+  position       Int          @default(0)
+
+  @@unique([outfitId, wardrobeItemId])
+  @@index([outfitId])
+  @@index([wardrobeItemId])
+}
+
+model ChatSession {
+  id        String        @id @default(cuid())
+  personId  String
+  person    Person        @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  title     String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  messages  ChatMessage[]
+
+  @@index([personId])
+}
+
+model ChatMessage {
+  id                 String      @id @default(cuid())
+  sessionId          String
+  session            ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  role               String
+  content            String      @db.Text
+
+  suggestedOutfitIds String[]
+
+  createdAt          DateTime    @default(now())
+
+  @@index([sessionId])
+}
+
+model Trip {
+  id              String         @id @default(cuid())
+  personId        String
+  name            String
+  destination     String
+  startDate       DateTime
+  endDate         DateTime
+  weatherForecast Json?
+  notes           String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  occasions       TripOccasion[]
+  packingList     PackingList?
+
+  @@index([personId])
+}
+
+model TripOccasion {
+  id           String       @id @default(cuid())
+  tripId       String
+  trip         Trip         @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  date         DateTime
+  description  String
+  occasionType OccasionType @default(OTHER)
+
+  outfitId     String?
+
+  @@index([tripId])
+}
+
+model PackingList {
+  id              String   @id @default(cuid())
+  tripId          String   @unique
+  trip            Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  wearOnTravelDay String[]
+  toPack          String[]
+  packed          String[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
