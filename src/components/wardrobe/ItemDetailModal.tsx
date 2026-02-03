@@ -30,6 +30,7 @@ import {
 } from "@/constants/categories";
 import { updateWardrobeItem, deleteWardrobeItem } from "@/lib/actions";
 import { toast } from "sonner";
+import { PhotoUploader } from "./PhotoUploader";
 
 interface ItemDetailModalProps {
   item: WardrobeItem | null;
@@ -44,9 +45,13 @@ export function ItemDetailModal({
 }: ItemDetailModalProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [formData, setFormData] = useState<Partial<WardrobeItem>>({});
+  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
 
   if (!item) return null;
+
+  const currentPhotoUrls = photoUrls.length > 0 ? photoUrls : item.photoUrls;
 
   const currentData = { ...item, ...formData };
 
@@ -79,6 +84,56 @@ export function ItemDetailModal({
 
   const updateField = (field: keyof WardrobeItem, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handlePhotoUpload = async (files: File[]) => {
+    setIsUploading(true);
+    try {
+      const uploadedUrls: string[] = [];
+
+      for (const file of files) {
+        // Get presigned URL
+        const presignedRes = await fetch(
+          `/api/upload/presigned?filename=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type)}`
+        );
+        if (!presignedRes.ok) throw new Error("Failed to get upload URL");
+        const { url, fields, key } = await presignedRes.json();
+
+        // Upload to S3
+        const formData = new FormData();
+        Object.entries(fields).forEach(([k, v]) => formData.append(k, v as string));
+        formData.append("file", file);
+
+        const uploadRes = await fetch(url, { method: "POST", body: formData });
+        if (!uploadRes.ok) throw new Error("Failed to upload file");
+
+        // Construct the URL for the uploaded image
+        const imageUrl = `/api/upload/image/${key}`;
+        uploadedUrls.push(imageUrl);
+      }
+
+      // Update the item with new photos
+      const newPhotoUrls = [...currentPhotoUrls, ...uploadedUrls];
+      await updateWardrobeItem(item.id, { photoUrls: newPhotoUrls });
+      setPhotoUrls(newPhotoUrls);
+      toast.success(`Uploaded ${files.length} photo${files.length !== 1 ? "s" : ""}`);
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error("Failed to upload photos");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleRemovePhoto = async (index: number) => {
+    const newPhotoUrls = currentPhotoUrls.filter((_, i) => i !== index);
+    try {
+      await updateWardrobeItem(item.id, { photoUrls: newPhotoUrls });
+      setPhotoUrls(newPhotoUrls);
+      toast.success("Photo removed");
+    } catch {
+      toast.error("Failed to remove photo");
+    }
   };
 
   return (
@@ -316,21 +371,47 @@ export function ItemDetailModal({
             </div>
           </TabsContent>
 
-          <TabsContent value="photos" className="mt-4">
-            <div className="grid grid-cols-2 gap-4">
-              {currentData.photoUrls.map((url, index) => (
-                <div key={url} className="aspect-square relative rounded-lg overflow-hidden">
-                  <img
-                    src={url}
-                    alt={`${currentData.category} photo ${index + 1}`}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-              ))}
-            </div>
-            {currentData.photoUrls.length === 0 && (
-              <p className="text-center text-muted-foreground py-8">
-                No photos uploaded
+          <TabsContent value="photos" className="mt-4 space-y-4">
+            {currentPhotoUrls.length > 0 && (
+              <div className="grid grid-cols-2 gap-4">
+                {currentPhotoUrls.map((url, index) => (
+                  <div key={url} className="aspect-square relative rounded-lg overflow-hidden group">
+                    <img
+                      src={url}
+                      alt={`${currentData.category} photo ${index + 1}`}
+                      className="h-full w-full object-cover"
+                    />
+                    <button
+                      onClick={() => handleRemovePhoto(index)}
+                      className="absolute top-2 right-2 p-1.5 rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"
+                      type="button"
+                    >
+                      <svg
+                        className="h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={2}
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <PhotoUploader
+              onUpload={handlePhotoUpload}
+              isUploading={isUploading}
+              maxFiles={5 - currentPhotoUrls.length}
+            />
+            {currentPhotoUrls.length >= 5 && (
+              <p className="text-center text-muted-foreground text-sm">
+                Maximum 5 photos per item
               </p>
             )}
           </TabsContent>
