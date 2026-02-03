@@ -9,6 +9,7 @@ datasource db {
 
 enum ItemStatus {
   ACTIVE
+  ORDERED
   ARCHIVED
   DONATED
   SOLD

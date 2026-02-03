@@ -73,6 +73,7 @@ export const SEASONS = ["SPRING", "SUMMER", "FALL", "WINTER", "ALL_SEASON"] as c
 
 export const ITEM_STATUSES = [
   { value: "ACTIVE", label: "Active" },
+  { value: "ORDERED", label: "Ordered" },
   { value: "ARCHIVED", label: "Archived" },
   { value: "DONATED", label: "Donated" },
   { value: "SOLD", label: "Sold" },
