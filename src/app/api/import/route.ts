@@ -1,5 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
 import { Season } from "@prisma/client";
 
@@ -62,6 +63,7 @@ export async function POST(request: NextRequest) {
       })),
     });
 
+    revalidatePath("/");
     return NextResponse.json({ count: created.count });
   } catch (error) {
     console.error("Import error:", error);

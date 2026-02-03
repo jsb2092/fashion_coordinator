@@ -1,14 +1,17 @@
 "use client";
 
+import { useState } from "react";
 import { WardrobeItem } from "@prisma/client";
 import { WardrobeItemCard } from "./WardrobeItemCard";
+import { ItemDetailModal } from "./ItemDetailModal";
 
 interface WardrobeGridProps {
   items: WardrobeItem[];
-  onItemClick?: (item: WardrobeItem) => void;
 }
 
-export function WardrobeGrid({ items, onItemClick }: WardrobeGridProps) {
+export function WardrobeGrid({ items }: WardrobeGridProps) {
+  const [selectedItem, setSelectedItem] = useState<WardrobeItem | null>(null);
+
   if (items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -36,14 +39,21 @@ export function WardrobeGrid({ items, onItemClick }: WardrobeGridProps) {
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-      {items.map((item) => (
-        <WardrobeItemCard
-          key={item.id}
-          item={item}
-          onClick={() => onItemClick?.(item)}
-        />
-      ))}
-    </div>
+    <>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+        {items.map((item) => (
+          <WardrobeItemCard
+            key={item.id}
+            item={item}
+            onClick={() => setSelectedItem(item)}
+          />
+        ))}
+      </div>
+      <ItemDetailModal
+        item={selectedItem}
+        isOpen={!!selectedItem}
+        onClose={() => setSelectedItem(null)}
+      />
+    </>
   );
 }

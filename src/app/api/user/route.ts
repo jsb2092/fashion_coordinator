@@ -21,11 +21,17 @@ export async function GET() {
     });
   }
 
+  const itemCount = await prisma.wardrobeItem.count({
+    where: { personId: person.id },
+  });
+
   return NextResponse.json({
     id: person.id,
+    clerkUserId: userId,
     name: person.name,
     preferences: person.preferences,
     measurements: person.measurements,
+    itemCount,
   });
 }
 
