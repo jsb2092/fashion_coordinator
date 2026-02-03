@@ -4,13 +4,20 @@ import { useState } from "react";
 import { WardrobeItem } from "@prisma/client";
 import { WardrobeItemCard } from "./WardrobeItemCard";
 import { ItemDetailModal } from "./ItemDetailModal";
+import {
+  Dialog,
+  DialogContent,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 interface WardrobeGridProps {
   items: WardrobeItem[];
 }
 
 export function WardrobeGrid({ items }: WardrobeGridProps) {
-  const [selectedItem, setSelectedItem] = useState<WardrobeItem | null>(null);
+  const [previewItem, setPreviewItem] = useState<WardrobeItem | null>(null);
+  const [detailItem, setDetailItem] = useState<WardrobeItem | null>(null);
 
   if (items.length === 0) {
     return (
@@ -38,6 +45,13 @@ export function WardrobeGrid({ items }: WardrobeGridProps) {
     );
   }
 
+  const openDetails = () => {
+    if (previewItem) {
+      setDetailItem(previewItem);
+      setPreviewItem(null);
+    }
+  };
+
   return (
     <>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
@@ -45,14 +59,60 @@ export function WardrobeGrid({ items }: WardrobeGridProps) {
           <WardrobeItemCard
             key={item.id}
             item={item}
-            onClick={() => setSelectedItem(item)}
+            onClick={() => setPreviewItem(item)}
           />
         ))}
       </div>
+
+      {/* Photo Preview Modal */}
+      <Dialog open={!!previewItem} onOpenChange={(open) => !open && setPreviewItem(null)}>
+        <DialogContent className="max-w-2xl p-0 overflow-hidden">
+          {previewItem && (
+            <div className="flex flex-col">
+              {/* Large Photo */}
+              <div className="relative bg-muted flex items-center justify-center min-h-[400px] max-h-[70vh]">
+                {previewItem.photoUrls[0] ? (
+                  <img
+                    src={previewItem.photoUrls[0]}
+                    alt={previewItem.category}
+                    className="max-w-full max-h-[70vh] object-contain"
+                  />
+                ) : (
+                  <div className="text-center text-muted-foreground p-8">
+                    <p className="text-xl font-medium">{previewItem.category}</p>
+                    <p>{previewItem.colorPrimary}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Quick Info Bar */}
+              <div className="p-4 border-t bg-background">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <h3 className="font-semibold truncate">{previewItem.category}</h3>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      <Badge variant="outline" className="text-xs">{previewItem.colorPrimary}</Badge>
+                      {previewItem.brand && (
+                        <Badge variant="secondary" className="text-xs">{previewItem.brand}</Badge>
+                      )}
+                      <Badge variant="outline" className="text-xs">{previewItem.status}</Badge>
+                    </div>
+                  </div>
+                  <Button onClick={openDetails} className="shrink-0">
+                    View Details
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Full Detail Modal */}
       <ItemDetailModal
-        item={selectedItem}
-        isOpen={!!selectedItem}
-        onClose={() => setSelectedItem(null)}
+        item={detailItem}
+        isOpen={!!detailItem}
+        onClose={() => setDetailItem(null)}
       />
     </>
   );
