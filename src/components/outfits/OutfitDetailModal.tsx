@@ -248,38 +248,45 @@ export function OutfitDetailModal({
 
           {/* Item Picker */}
           {showItemPicker && (
-            <div className="border rounded-lg p-4">
-              <div className="flex items-center justify-between mb-3">
-                <Label>Select an item to add</Label>
-                <Button variant="ghost" size="sm" onClick={() => setShowItemPicker(false)}>
-                  Cancel
+            <div className="border rounded-lg p-4 bg-muted/30">
+              <div className="flex items-center justify-between mb-4">
+                <Label className="text-base font-semibold">Select an item to add</Label>
+                <Button variant="outline" size="sm" onClick={() => setShowItemPicker(false)}>
+                  Close
                 </Button>
               </div>
-              <ScrollArea className="h-64">
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+              <ScrollArea className="h-80">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pr-4">
                   {allWardrobeItems
                     .filter((i) => !editedItems.find((e) => e.id === i.id))
                     .map((item) => (
                       <Card
                         key={item.id}
-                        className="overflow-hidden cursor-pointer hover:ring-2 hover:ring-primary"
+                        className="overflow-hidden cursor-pointer hover:ring-2 hover:ring-primary transition-all"
                         onClick={() => handleAddItem(item)}
                       >
-                        <div className="aspect-square bg-muted">
+                        <div className="aspect-square bg-muted relative">
                           {item.photoUrls[0] ? (
                             <img
                               src={item.photoUrls[0]}
                               alt={item.category}
-                              className="h-full w-full object-cover"
+                              className="absolute inset-0 h-full w-full object-cover"
                             />
                           ) : (
-                            <div className="h-full w-full flex items-center justify-center text-muted-foreground p-1 text-center">
+                            <div className="absolute inset-0 flex items-center justify-center text-muted-foreground p-2 text-center">
                               <div>
-                                <p className="text-xs font-medium">{item.category}</p>
-                                <p className="text-[10px]">{item.colorPrimary}</p>
+                                <p className="text-sm font-medium">{item.category}</p>
+                                <p className="text-xs">{item.colorPrimary}</p>
                               </div>
                             </div>
                           )}
+                        </div>
+                        <div className="p-2">
+                          <p className="text-xs font-medium truncate">{item.category}</p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {item.colorPrimary}
+                            {item.brand && ` · ${item.brand}`}
+                          </p>
                         </div>
                       </Card>
                     ))}
