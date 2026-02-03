@@ -107,12 +107,13 @@ Return a JSON object with these fields:
 }
 
 export interface OutfitSuggestion {
-  outfitName: string;
-  itemIds: string[];
-  occasionType: string;
-  formalityScore: number;
+  needsOutfit: boolean;
+  outfitName?: string;
+  itemIds?: string[];
+  occasionType?: string;
+  formalityScore?: number;
   reasoning: string;
-  stylingTips: string;
+  stylingTips?: string;
   alternatives?: {
     itemId: string;
     reason: string;
@@ -151,7 +152,7 @@ export async function getOutfitSuggestion(
   userPreferences: UserPreferences | null,
   recentOutfits: OutfitHistory[]
 ): Promise<OutfitSuggestion> {
-  const systemPrompt = `You are a personal fashion stylist helping create outfits. You have access to the user's complete wardrobe and their style preferences.
+  const systemPrompt = `You are a personal fashion stylist helping with wardrobe questions and outfit creation. You have access to the user's complete wardrobe and their style preferences.
 
 Style rules to follow:
 - Formality levels should be within 1 step of each other in an outfit
@@ -165,19 +166,26 @@ Style rules to follow:
 - Short-sleeve button-ups are inherently casual (formality 2-3)
 - Seersucker and linen are spring/summer only
 
-When suggesting outfits:
-1. Consider the occasion and required formality level
-2. Ensure color coordination and pattern mixing rules
-3. Account for seasonal appropriateness
-4. Avoid items the user recently wore (shown in history)
-5. Explain your reasoning for each choice
+IMPORTANT: Determine if the user needs a NEW outfit or is just asking a question/follow-up about an existing outfit or general style advice.
+
+For QUESTIONS (what color belt, what shoes go with X, can I wear Y with Z, follow-up questions about a previously suggested outfit, etc.):
+- Set needsOutfit: false
+- Provide helpful advice in the "reasoning" field
+- Do NOT suggest a complete outfit
+
+For NEW OUTFIT REQUESTS (what to wear to an event, build me an outfit, etc.):
+- Set needsOutfit: true
+- Include all outfit fields
 
 Always respond with a valid JSON object containing:
+- needsOutfit: boolean - false for questions/advice, true for new outfit requests
+- reasoning: your response/advice to the user (REQUIRED)
+
+If needsOutfit is true, ALSO include:
 - outfitName: descriptive name for this outfit
 - itemIds: array of item IDs from the wardrobe
 - occasionType: MUST be one of: CASUAL, SMART_CASUAL, BUSINESS_CASUAL, BUSINESS_FORMAL, BLACK_TIE, DATE_NIGHT, CHURCH, TRAVEL, OUTDOOR, ATHLETIC, OTHER
 - formalityScore: 1-5 rating
-- reasoning: explain why you chose each piece
 - stylingTips: additional styling advice
 - alternatives: optional array of {itemId, reason} for swap suggestions`;
 
@@ -200,7 +208,7 @@ ${JSON.stringify(recentOutfits.slice(0, 5), null, 2)}
 
 User request: ${userMessage}
 
-Please suggest an outfit with specific items from my wardrobe. Return only valid JSON.`,
+Determine if this needs a new outfit or is just a question. Return only valid JSON.`,
       },
     ],
   });

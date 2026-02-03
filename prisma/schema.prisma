@@ -172,6 +172,7 @@ model ChatMessage {
   content            String      @db.Text
 
   suggestedOutfitIds String[]
+  suggestedOutfit    Json?       // Full outfit suggestion data for reconstruction
 
   createdAt          DateTime    @default(now())
 

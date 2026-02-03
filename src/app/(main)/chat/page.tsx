@@ -97,7 +97,7 @@ export default function ChatPage() {
           id: m.id,
           role: m.role as "user" | "assistant",
           content: m.content,
-          // Note: We don't persist the full outfit data, just the IDs
+          suggestedOutfit: m.suggestedOutfit as unknown as SuggestedOutfit | undefined,
         }));
         setMessages(loadedMessages.length > 0 ? loadedMessages : [WELCOME_MESSAGE]);
       }
@@ -198,13 +198,13 @@ export default function ChatPage() {
 
       setMessages((prev) => [...prev, assistantMessage]);
 
-      // Save assistant message
+      // Save assistant message with full outfit data
       try {
         await addChatMessage(
           sessionId,
           "assistant",
           data.content,
-          data.suggestedOutfit?.itemIds
+          data.suggestedOutfit
         );
         await loadSessions();
       } catch (error) {

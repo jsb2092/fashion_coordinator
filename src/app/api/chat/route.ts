@@ -90,31 +90,40 @@ export async function POST(request: NextRequest) {
       outfitHistory
     );
 
-    const suggestedItems = wardrobeItems.filter((item) =>
-      suggestion.itemIds.includes(item.id)
-    );
-
     let content = suggestion.reasoning;
     if (suggestion.stylingTips) {
       content += `\n\n**Styling tips:** ${suggestion.stylingTips}`;
     }
 
-    return NextResponse.json({
-      content,
-      suggestedOutfit: {
-        name: suggestion.outfitName,
-        itemIds: suggestion.itemIds,
-        items: suggestedItems.map((item) => ({
-          id: item.id,
-          category: item.category,
-          colorPrimary: item.colorPrimary,
-          photoUrls: item.photoUrls,
-        })),
-        reasoning: suggestion.reasoning,
-        occasionType: suggestion.occasionType,
-        formalityScore: suggestion.formalityScore,
-      },
-    });
+    // Only include outfit if one was requested
+    if (suggestion.needsOutfit && suggestion.itemIds && suggestion.itemIds.length > 0) {
+      const suggestedItems = wardrobeItems.filter((item) =>
+        suggestion.itemIds!.includes(item.id)
+      );
+
+      return NextResponse.json({
+        content,
+        suggestedOutfit: {
+          name: suggestion.outfitName,
+          itemIds: suggestion.itemIds,
+          items: suggestedItems.map((item) => ({
+            id: item.id,
+            category: item.category,
+            subcategory: item.subcategory,
+            colorPrimary: item.colorPrimary,
+            colorSecondary: item.colorSecondary,
+            pattern: item.pattern,
+            photoUrls: item.photoUrls,
+          })),
+          reasoning: suggestion.reasoning,
+          occasionType: suggestion.occasionType,
+          formalityScore: suggestion.formalityScore,
+        },
+      });
+    }
+
+    // Just a question/advice response, no outfit
+    return NextResponse.json({ content });
   } catch (error) {
     console.error("Chat error:", error);
     return NextResponse.json(

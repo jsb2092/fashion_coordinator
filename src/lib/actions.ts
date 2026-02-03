@@ -291,7 +291,14 @@ export async function addChatMessage(
   sessionId: string,
   role: string,
   content: string,
-  suggestedOutfitIds?: string[]
+  suggestedOutfit?: {
+    name: string;
+    itemIds: string[];
+    reasoning: string;
+    occasionType: string;
+    formalityScore: number;
+    items?: unknown[];
+  }
 ) {
   const person = await getOrCreatePerson();
 
@@ -309,7 +316,8 @@ export async function addChatMessage(
       sessionId,
       role,
       content,
-      suggestedOutfitIds: suggestedOutfitIds || [],
+      suggestedOutfitIds: suggestedOutfit?.itemIds || [],
+      suggestedOutfit: suggestedOutfit ? (suggestedOutfit as never) : undefined,
     },
   });
 
