@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { WardrobeItem } from "@prisma/client";
 import {
   Dialog,
@@ -48,6 +48,13 @@ export function ItemDetailModal({
   const [isUploading, setIsUploading] = useState(false);
   const [formData, setFormData] = useState<Partial<WardrobeItem>>({});
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+
+  // Reset state when item changes
+  useEffect(() => {
+    setIsEditing(false);
+    setFormData({});
+    setPhotoUrls([]);
+  }, [item?.id]);
 
   if (!item) return null;
 
@@ -403,6 +410,7 @@ export function ItemDetailModal({
               </div>
             )}
             <PhotoUploader
+              key={item.id}
               onUpload={handlePhotoUpload}
               isUploading={isUploading}
               maxFiles={5 - currentPhotoUrls.length}
