@@ -55,21 +55,21 @@ export default function UploadPage() {
       const urls: string[] = [];
 
       for (const file of files) {
-        const presignedRes = await fetch(
-          `/api/upload/presigned?filename=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type)}`
-        );
-        const { url, fields, key } = await presignedRes.json();
+        const uploadFormData = new FormData();
+        uploadFormData.append("file", file);
 
-        const formData = new FormData();
-        Object.entries(fields).forEach(([k, v]) =>
-          formData.append(k, v as string)
-        );
-        formData.append("file", file);
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          body: uploadFormData,
+        });
 
-        await fetch(url, { method: "POST", body: formData });
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.error || "Failed to upload");
+        }
 
-        const publicUrl = `/api/upload/image/${encodeURIComponent(key)}`;
-        urls.push(publicUrl);
+        const { url } = await res.json();
+        urls.push(url);
       }
 
       setUploadedUrls(urls);
