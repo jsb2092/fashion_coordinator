@@ -49,10 +49,10 @@ export function OutfitSuggestionCard({
 
   return (
     <>
-      <Card className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h4 className="font-semibold">{outfit.name}</h4>
-          <Badge variant="secondary">{outfit.occasionType}</Badge>
+      <Card className="p-4 overflow-hidden">
+        <div className="flex items-start justify-between gap-2 mb-3">
+          <h4 className="font-semibold break-words min-w-0">{outfit.name}</h4>
+          <Badge variant="secondary" className="shrink-0">{outfit.occasionType}</Badge>
         </div>
 
         {outfit.items && outfit.items.length > 0 && (
@@ -63,12 +63,12 @@ export function OutfitSuggestionCard({
                 className="cursor-pointer group"
                 onClick={() => setSelectedItem(item)}
               >
-                <div className="aspect-square rounded-lg overflow-hidden bg-muted relative ring-2 ring-transparent hover:ring-primary transition-all">
+                <div className="aspect-square rounded-lg overflow-hidden bg-muted relative ring-2 ring-transparent hover:ring-primary transition-all flex items-center justify-center">
                   {item.photoUrls[0] ? (
                     <img
                       src={item.photoUrls[0]}
                       alt={item.category}
-                      className="w-full h-full object-cover"
+                      className="max-w-full max-h-full object-contain"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground p-1 text-center">
@@ -99,7 +99,7 @@ export function OutfitSuggestionCard({
             className="w-full justify-start text-left h-auto py-2"
             onClick={() => setShowReasoningModal(true)}
           >
-            <div className="flex items-start gap-2">
+            <div className="flex items-start gap-2 min-w-0">
               <svg
                 className="w-4 h-4 mt-0.5 flex-shrink-0"
                 fill="none"
@@ -113,7 +113,7 @@ export function OutfitSuggestionCard({
                   d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"
                 />
               </svg>
-              <span className="text-sm text-muted-foreground line-clamp-2">
+              <span className="text-sm text-muted-foreground line-clamp-2 break-words min-w-0">
                 {outfit.reasoning}
               </span>
             </div>
@@ -134,11 +134,13 @@ export function OutfitSuggestionCard({
           {selectedItem && (
             <div className="space-y-4">
               {selectedItem.photoUrls[0] ? (
-                <img
-                  src={selectedItem.photoUrls[0]}
-                  alt={selectedItem.category}
-                  className="w-full aspect-square object-cover rounded-lg"
-                />
+                <div className="w-full aspect-square bg-muted rounded-lg flex items-center justify-center">
+                  <img
+                    src={selectedItem.photoUrls[0]}
+                    alt={selectedItem.category}
+                    className="max-w-full max-h-full object-contain"
+                  />
+                </div>
               ) : (
                 <div className="w-full aspect-square bg-muted rounded-lg flex items-center justify-center">
                   <div className="text-center text-muted-foreground">

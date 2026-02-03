@@ -46,6 +46,7 @@ export function ItemDetailModal({
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isChangingStatus, setIsChangingStatus] = useState(false);
   const [formData, setFormData] = useState<Partial<WardrobeItem>>({});
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
 
@@ -141,6 +142,18 @@ export function ItemDetailModal({
     }
   };
 
+  const handleQuickStatusChange = async (newStatus: string) => {
+    setIsChangingStatus(true);
+    try {
+      await updateWardrobeItem(item.id, { status: newStatus });
+      toast.success(`Status changed to ${ITEM_STATUSES.find(s => s.value === newStatus)?.label || newStatus}`);
+    } catch {
+      toast.error("Failed to update status");
+    } finally {
+      setIsChangingStatus(false);
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -172,6 +185,28 @@ export function ItemDetailModal({
             </div>
           </DialogTitle>
         </DialogHeader>
+
+        {/* Quick Status Change - Always visible */}
+        <div className="flex items-center gap-3 py-2 px-1 border-b">
+          <Label className="text-sm text-muted-foreground shrink-0">Status:</Label>
+          <Select
+            value={currentData.status}
+            onValueChange={handleQuickStatusChange}
+            disabled={isChangingStatus}
+          >
+            <SelectTrigger className="w-[180px] h-8">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {ITEM_STATUSES.map((status) => (
+                <SelectItem key={status.value} value={status.value}>
+                  {status.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {isChangingStatus && <span className="text-xs text-muted-foreground">Saving...</span>}
+        </div>
 
         <Tabs defaultValue="details" className="mt-4">
           <TabsList>
