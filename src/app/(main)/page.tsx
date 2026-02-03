@@ -51,7 +51,9 @@ export default async function WardrobePage({ searchParams }: PageProps) {
   return (
     <div className="flex h-full">
       <aside className="w-64 border-r p-4 hidden lg:block">
-        <ItemFilters />
+        <Suspense fallback={<div className="space-y-4"><Skeleton className="h-6 w-20" /><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>}>
+          <ItemFilters />
+        </Suspense>
       </aside>
       <div className="flex-1 p-6">
         <div className="flex items-center justify-between mb-6">
