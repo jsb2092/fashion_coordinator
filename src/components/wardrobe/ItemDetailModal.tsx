@@ -100,15 +100,14 @@ export function ItemDetailModal({
         const { url, fields, key } = await presignedRes.json();
 
         // Upload to S3
-        const formData = new FormData();
-        Object.entries(fields).forEach(([k, v]) => formData.append(k, v as string));
-        formData.append("file", file);
+        const uploadFormData = new FormData();
+        Object.entries(fields).forEach(([k, v]) => uploadFormData.append(k, v as string));
+        uploadFormData.append("file", file);
 
-        const uploadRes = await fetch(url, { method: "POST", body: formData });
-        if (!uploadRes.ok) throw new Error("Failed to upload file");
+        await fetch(url, { method: "POST", body: uploadFormData });
 
         // Construct the URL for the uploaded image
-        const imageUrl = `/api/upload/image/${key}`;
+        const imageUrl = `/api/upload/image/${encodeURIComponent(key)}`;
         uploadedUrls.push(imageUrl);
       }
 
