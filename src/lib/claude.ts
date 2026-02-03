@@ -175,7 +175,7 @@ When suggesting outfits:
 Always respond with a valid JSON object containing:
 - outfitName: descriptive name for this outfit
 - itemIds: array of item IDs from the wardrobe
-- occasionType: type of occasion this is for
+- occasionType: MUST be one of: CASUAL, SMART_CASUAL, BUSINESS_CASUAL, BUSINESS_FORMAL, BLACK_TIE, DATE_NIGHT, CHURCH, TRAVEL, OUTDOOR, ATHLETIC, OTHER
 - formalityScore: 1-5 rating
 - reasoning: explain why you chose each piece
 - stylingTips: additional styling advice
