@@ -24,7 +24,7 @@ async function WardrobeContent({
   const params = await searchParams;
   const items = await getWardrobeItems({
     category: params.category,
-    status: params.status || "ACTIVE",
+    status: params.status, // undefined = all statuses
     formalityLevel: params.formality ? parseInt(params.formality) : undefined,
     season: params.season,
     search: params.search,
