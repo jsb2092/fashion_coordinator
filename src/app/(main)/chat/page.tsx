@@ -3,30 +3,39 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { createOutfit } from "@/lib/actions";
 import { toast } from "sonner";
+import { OutfitSuggestionCard } from "@/components/chat/OutfitSuggestionCard";
+
+interface OutfitItem {
+  id: string;
+  category: string;
+  subcategory?: string | null;
+  colorPrimary: string;
+  colorSecondary?: string | null;
+  pattern?: string | null;
+  brand?: string | null;
+  material?: string | null;
+  photoUrls: string[];
+  notes?: string | null;
+}
+
+interface SuggestedOutfit {
+  name: string;
+  itemIds: string[];
+  items?: OutfitItem[];
+  reasoning: string;
+  occasionType: string;
+  formalityScore: number;
+}
 
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
-  suggestedOutfit?: {
-    name: string;
-    itemIds: string[];
-    items?: Array<{
-      id: string;
-      category: string;
-      colorPrimary: string;
-      photoUrls: string[];
-    }>;
-    reasoning: string;
-    occasionType: string;
-    formalityScore: number;
-  };
+  suggestedOutfit?: SuggestedOutfit;
 }
 
 export default function ChatPage() {
@@ -96,7 +105,7 @@ export default function ChatPage() {
     }
   };
 
-  const handleSaveOutfit = async (outfit: Message["suggestedOutfit"]) => {
+  const handleSaveOutfit = async (outfit: SuggestedOutfit) => {
     if (!outfit) return;
 
     try {
@@ -113,6 +122,11 @@ export default function ChatPage() {
       console.error("Save outfit error:", error);
       toast.error("Failed to save outfit");
     }
+  };
+
+  const handleRequestReplacement = (item: OutfitItem, reason: string) => {
+    const replacementMessage = `Please replace the ${item.category} (${item.colorPrimary}${item.brand ? `, ${item.brand}` : ""}) in this outfit. ${reason}. Suggest an alternative from my wardrobe.`;
+    setInput(replacementMessage);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -176,51 +190,11 @@ export default function ChatPage() {
                 </div>
 
                 {message.suggestedOutfit && (
-                  <Card className="p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="font-semibold">
-                        {message.suggestedOutfit.name}
-                      </h4>
-                      <Badge variant="secondary">
-                        {message.suggestedOutfit.occasionType}
-                      </Badge>
-                    </div>
-
-                    {message.suggestedOutfit.items &&
-                      message.suggestedOutfit.items.length > 0 && (
-                        <div className="flex gap-2 mb-3 overflow-x-auto pb-2">
-                          {message.suggestedOutfit.items.map((item) => (
-                            <div
-                              key={item.id}
-                              className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-muted"
-                            >
-                              {item.photoUrls[0] ? (
-                                <img
-                                  src={item.photoUrls[0]}
-                                  alt={item.category}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
-                                  {item.category}
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                    <p className="text-sm text-muted-foreground mb-3">
-                      {message.suggestedOutfit.reasoning}
-                    </p>
-
-                    <Button
-                      size="sm"
-                      onClick={() => handleSaveOutfit(message.suggestedOutfit)}
-                    >
-                      Save Outfit
-                    </Button>
-                  </Card>
+                  <OutfitSuggestionCard
+                    outfit={message.suggestedOutfit}
+                    onSave={() => handleSaveOutfit(message.suggestedOutfit!)}
+                    onRequestReplacement={handleRequestReplacement}
+                  />
                 )}
               </div>
               {message.role === "user" && (
