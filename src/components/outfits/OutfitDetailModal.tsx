@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Outfit, OutfitItem, WardrobeItem } from "@prisma/client";
 import {
   Dialog,
@@ -11,7 +11,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import {
@@ -21,8 +20,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { OCCASION_TYPES, FORMALITY_LEVELS } from "@/constants/categories";
-import { deleteOutfit } from "@/lib/actions";
+import { deleteOutfit, updateOutfit, getWardrobeItems } from "@/lib/actions";
 import { toast } from "sonner";
 
 type OutfitWithItems = Outfit & {
@@ -41,6 +41,27 @@ export function OutfitDetailModal({
   onClose,
 }: OutfitDetailModalProps) {
   const [selectedItem, setSelectedItem] = useState<WardrobeItem | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editedItems, setEditedItems] = useState<WardrobeItem[]>([]);
+  const [editedName, setEditedName] = useState("");
+  const [editedOccasion, setEditedOccasion] = useState("");
+  const [allWardrobeItems, setAllWardrobeItems] = useState<WardrobeItem[]>([]);
+  const [showItemPicker, setShowItemPicker] = useState(false);
+
+  useEffect(() => {
+    if (outfit) {
+      setEditedItems(outfit.items.map((i) => i.wardrobeItem));
+      setEditedName(outfit.name);
+      setEditedOccasion(outfit.occasionType);
+    }
+  }, [outfit?.id]);
+
+  useEffect(() => {
+    if (isEditing && allWardrobeItems.length === 0) {
+      getWardrobeItems({ status: "ACTIVE" }).then(setAllWardrobeItems);
+    }
+  }, [isEditing]);
 
   if (!outfit) return null;
 
@@ -63,15 +84,76 @@ export function OutfitDetailModal({
     }
   };
 
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await updateOutfit(outfit.id, {
+        name: editedName,
+        occasionType: editedOccasion,
+        itemIds: editedItems.map((i) => i.id),
+      });
+      toast.success("Outfit updated");
+      setIsEditing(false);
+      onClose();
+    } catch {
+      toast.error("Failed to update outfit");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleRemoveItem = (itemId: string) => {
+    setEditedItems((items) => items.filter((i) => i.id !== itemId));
+  };
+
+  const handleAddItem = (item: WardrobeItem) => {
+    if (!editedItems.find((i) => i.id === item.id)) {
+      setEditedItems((items) => [...items, item]);
+    }
+    setShowItemPicker(false);
+  };
+
+  const handleCancelEdit = () => {
+    setEditedItems(outfit.items.map((i) => i.wardrobeItem));
+    setEditedName(outfit.name);
+    setEditedOccasion(outfit.occasionType);
+    setIsEditing(false);
+    setShowItemPicker(false);
+  };
+
+  const displayItems = isEditing ? editedItems : outfit.items.map((i) => i.wardrobeItem);
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
-            <span>{outfit.name}</span>
+            {isEditing ? (
+              <Input
+                value={editedName}
+                onChange={(e) => setEditedName(e.target.value)}
+                className="text-lg font-semibold"
+              />
+            ) : (
+              <span>{outfit.name}</span>
+            )}
             <div className="flex gap-2">
               {outfit.createdBy === "ai" && (
                 <Badge variant="default">AI Generated</Badge>
+              )}
+              {!isEditing ? (
+                <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+                  Edit
+                </Button>
+              ) : (
+                <>
+                  <Button variant="outline" size="sm" onClick={handleCancelEdit}>
+                    Cancel
+                  </Button>
+                  <Button size="sm" onClick={handleSave} disabled={isSaving}>
+                    {isSaving ? "Saving..." : "Save"}
+                  </Button>
+                </>
               )}
             </div>
           </DialogTitle>
@@ -79,57 +161,132 @@ export function OutfitDetailModal({
 
         <div className="space-y-6 mt-4">
           {/* Outfit Info */}
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="secondary">{occasionLabel}</Badge>
+          <div className="flex flex-wrap gap-2 items-center">
+            {isEditing ? (
+              <Select value={editedOccasion} onValueChange={setEditedOccasion}>
+                <SelectTrigger className="w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {OCCASION_TYPES.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Badge variant="secondary">{occasionLabel}</Badge>
+            )}
             {formalityLabel && <Badge variant="outline">{formalityLabel}</Badge>}
-            <Badge variant="outline">{outfit.items.length} items</Badge>
+            <Badge variant="outline">{displayItems.length} items</Badge>
             <Badge variant="outline">Worn {outfit.timesWorn} times</Badge>
           </div>
 
           {/* Items Grid */}
           <div>
-            <Label className="mb-3 block">Items in this outfit</Label>
+            <div className="flex items-center justify-between mb-3">
+              <Label>Items in this outfit</Label>
+              {isEditing && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowItemPicker(true)}
+                >
+                  + Add Item
+                </Button>
+              )}
+            </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-              {outfit.items.map((item) => (
+              {displayItems.map((item) => (
                 <Card
                   key={item.id}
                   className={`overflow-hidden cursor-pointer transition-all hover:ring-2 hover:ring-primary ${
-                    selectedItem?.id === item.wardrobeItem.id
-                      ? "ring-2 ring-primary"
-                      : ""
+                    selectedItem?.id === item.id ? "ring-2 ring-primary" : ""
                   }`}
-                  onClick={() => setSelectedItem(item.wardrobeItem)}
+                  onClick={() => !isEditing && setSelectedItem(item)}
                 >
                   <div className="aspect-square bg-muted relative">
-                    {item.wardrobeItem.photoUrls[0] ? (
+                    {item.photoUrls[0] ? (
                       <img
-                        src={item.wardrobeItem.photoUrls[0]}
-                        alt={item.wardrobeItem.category}
+                        src={item.photoUrls[0]}
+                        alt={item.category}
                         className="h-full w-full object-cover"
                       />
                     ) : (
                       <div className="h-full w-full flex items-center justify-center text-muted-foreground p-2 text-center">
                         <div>
-                          <p className="font-medium text-sm">
-                            {item.wardrobeItem.category}
-                          </p>
-                          <p className="text-xs">{item.wardrobeItem.colorPrimary}</p>
+                          <p className="font-medium text-sm">{item.category}</p>
+                          <p className="text-xs">{item.colorPrimary}</p>
                         </div>
                       </div>
                     )}
+                    {isEditing && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveItem(item.id);
+                        }}
+                        className="absolute top-1 right-1 p-1 rounded-full bg-red-500 text-white hover:bg-red-600"
+                      >
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    )}
                   </div>
                   <div className="p-2">
-                    <p className="text-xs font-medium truncate">
-                      {item.wardrobeItem.category}
-                    </p>
+                    <p className="text-xs font-medium truncate">{item.category}</p>
                     <p className="text-xs text-muted-foreground truncate">
-                      {item.wardrobeItem.colorPrimary}
+                      {item.colorPrimary}
                     </p>
                   </div>
                 </Card>
               ))}
             </div>
           </div>
+
+          {/* Item Picker */}
+          {showItemPicker && (
+            <div className="border rounded-lg p-4">
+              <div className="flex items-center justify-between mb-3">
+                <Label>Select an item to add</Label>
+                <Button variant="ghost" size="sm" onClick={() => setShowItemPicker(false)}>
+                  Cancel
+                </Button>
+              </div>
+              <ScrollArea className="h-64">
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                  {allWardrobeItems
+                    .filter((i) => !editedItems.find((e) => e.id === i.id))
+                    .map((item) => (
+                      <Card
+                        key={item.id}
+                        className="overflow-hidden cursor-pointer hover:ring-2 hover:ring-primary"
+                        onClick={() => handleAddItem(item)}
+                      >
+                        <div className="aspect-square bg-muted">
+                          {item.photoUrls[0] ? (
+                            <img
+                              src={item.photoUrls[0]}
+                              alt={item.category}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center text-muted-foreground p-1 text-center">
+                              <div>
+                                <p className="text-xs font-medium">{item.category}</p>
+                                <p className="text-[10px]">{item.colorPrimary}</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </Card>
+                    ))}
+                </div>
+              </ScrollArea>
+            </div>
+          )}
 
           {/* Selected Item Detail */}
           {selectedItem && (

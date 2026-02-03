@@ -238,3 +238,60 @@ export async function deleteOutfit(id: string) {
 
   revalidatePath("/outfits");
 }
+
+export async function updateOutfit(
+  id: string,
+  data: {
+    name?: string;
+    occasionType?: string;
+    description?: string;
+    itemIds?: string[];
+  }
+) {
+  const person = await getOrCreatePerson();
+
+  // Verify ownership
+  const existing = await prisma.outfit.findFirst({
+    where: { id, personId: person.id },
+  });
+
+  if (!existing) {
+    throw new Error("Outfit not found");
+  }
+
+  // If itemIds are provided, update the outfit items
+  if (data.itemIds) {
+    // Delete existing outfit items
+    await prisma.outfitItem.deleteMany({
+      where: { outfitId: id },
+    });
+
+    // Create new outfit items
+    await prisma.outfitItem.createMany({
+      data: data.itemIds.map((itemId, index) => ({
+        outfitId: id,
+        wardrobeItemId: itemId,
+        position: index,
+      })),
+    });
+  }
+
+  // Update outfit metadata
+  const outfit = await prisma.outfit.update({
+    where: { id },
+    data: {
+      ...(data.name && { name: data.name }),
+      ...(data.occasionType && { occasionType: data.occasionType as never }),
+      ...(data.description !== undefined && { description: data.description }),
+    },
+    include: {
+      items: {
+        include: { wardrobeItem: true },
+        orderBy: { position: "asc" },
+      },
+    },
+  });
+
+  revalidatePath("/outfits");
+  return outfit;
+}
