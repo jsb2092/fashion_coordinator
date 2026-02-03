@@ -99,12 +99,17 @@ export function ItemDetailModal({
         if (!presignedRes.ok) throw new Error("Failed to get upload URL");
         const { url, fields, key } = await presignedRes.json();
 
-        // Upload to S3
+        // Upload to S3 (no-cors mode since it's cross-origin)
         const uploadFormData = new FormData();
         Object.entries(fields).forEach(([k, v]) => uploadFormData.append(k, v as string));
         uploadFormData.append("file", file);
 
-        await fetch(url, { method: "POST", body: uploadFormData });
+        try {
+          await fetch(url, { method: "POST", body: uploadFormData });
+        } catch (uploadError) {
+          console.error("S3 upload error:", uploadError);
+          throw new Error("Failed to upload to storage");
+        }
 
         // Construct the URL for the uploaded image
         const imageUrl = `/api/upload/image/${encodeURIComponent(key)}`;
