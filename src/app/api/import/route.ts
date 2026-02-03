@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { Season } from "@prisma/client";
 
 export async function POST(request: NextRequest) {
   const { userId } = await auth();
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest) {
         material: item.material || null,
         formalityLevel: item.formalityLevel,
         construction: item.construction || null,
-        seasonSuitability: item.seasonSuitability || ["ALL_SEASON"],
+        seasonSuitability: (item.seasonSuitability || ["ALL_SEASON"]) as Season[],
         notes: item.notes || null,
       })),
     });
