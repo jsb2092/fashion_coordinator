@@ -43,6 +43,11 @@ export async function getWardrobeItems(filters?: {
 
   if (filters?.status) {
     where.status = filters.status;
+  } else {
+    // Default: show available items (exclude archived, donated, sold)
+    where.status = {
+      notIn: ["ARCHIVED", "DONATED", "SOLD"],
+    };
   }
 
   if (filters?.formalityLevel) {

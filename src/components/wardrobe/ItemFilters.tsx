@@ -137,7 +137,7 @@ export function ItemFilters() {
               <SelectValue placeholder="All statuses" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All statuses</SelectItem>
+              <SelectItem value="all">Available (default)</SelectItem>
               {ITEM_STATUSES.map((status) => (
                 <SelectItem key={status.value} value={status.value}>
                   {status.label}
