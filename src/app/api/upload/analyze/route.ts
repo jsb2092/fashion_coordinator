@@ -2,6 +2,9 @@ import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { analyzeClothingImage } from "@/lib/claude";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import sharp from "sharp";
+
+const MAX_IMAGE_SIZE = 4 * 1024 * 1024; // 4MB to be safe (Claude limit is 5MB)
 
 const s3Client = new S3Client({
   endpoint: process.env.AWS_ENDPOINT_URL_S3,
@@ -53,15 +56,31 @@ export async function POST(request: NextRequest) {
       throw new Error("Failed to read image from S3");
     }
 
-    // Convert to base64
-    const base64Data = Buffer.from(bodyBytes).toString("base64");
+    let imageBuffer: Buffer = Buffer.from(bodyBytes);
+    let mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp" = "image/jpeg";
 
-    // Determine media type
-    const contentType = s3Response.ContentType || "image/jpeg";
-    const mediaType = contentType.startsWith("image/")
-      ? contentType as "image/jpeg" | "image/png" | "image/gif" | "image/webp"
-      : "image/jpeg";
+    // Resize if image is too large for Claude API (5MB limit)
+    if (imageBuffer.length > MAX_IMAGE_SIZE) {
+      console.log(`Image too large (${(imageBuffer.length / 1024 / 1024).toFixed(2)}MB), resizing...`);
 
+      // Resize to max 1500px on longest side and convert to JPEG for smaller size
+      const resized = await sharp(imageBuffer)
+        .resize(1500, 1500, { fit: "inside", withoutEnlargement: true })
+        .jpeg({ quality: 85 })
+        .toBuffer();
+      imageBuffer = resized;
+
+      mediaType = "image/jpeg";
+      console.log(`Resized to ${(imageBuffer.length / 1024 / 1024).toFixed(2)}MB`);
+    } else {
+      // Determine media type from original
+      const contentType = s3Response.ContentType || "image/jpeg";
+      mediaType = contentType.startsWith("image/")
+        ? contentType as "image/jpeg" | "image/png" | "image/gif" | "image/webp"
+        : "image/jpeg";
+    }
+
+    const base64Data = imageBuffer.toString("base64");
     const analysis = await analyzeClothingImage(base64Data, mediaType);
 
     return NextResponse.json(analysis);
