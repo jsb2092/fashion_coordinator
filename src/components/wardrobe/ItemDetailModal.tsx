@@ -92,28 +92,22 @@ export function ItemDetailModal({
       const uploadedUrls: string[] = [];
 
       for (const file of files) {
-        // Get presigned URL
-        const presignedRes = await fetch(
-          `/api/upload/presigned?filename=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type)}`
-        );
-        if (!presignedRes.ok) throw new Error("Failed to get upload URL");
-        const { url, fields, key } = await presignedRes.json();
-
-        // Upload to S3 (no-cors mode since it's cross-origin)
+        // Upload through server-side API (avoids CORS)
         const uploadFormData = new FormData();
-        Object.entries(fields).forEach(([k, v]) => uploadFormData.append(k, v as string));
         uploadFormData.append("file", file);
 
-        try {
-          await fetch(url, { method: "POST", body: uploadFormData });
-        } catch (uploadError) {
-          console.error("S3 upload error:", uploadError);
-          throw new Error("Failed to upload to storage");
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          body: uploadFormData,
+        });
+
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.error || "Failed to upload");
         }
 
-        // Construct the URL for the uploaded image
-        const imageUrl = `/api/upload/image/${encodeURIComponent(key)}`;
-        uploadedUrls.push(imageUrl);
+        const { url } = await res.json();
+        uploadedUrls.push(url);
       }
 
       // Update the item with new photos
