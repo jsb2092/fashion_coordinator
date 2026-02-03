@@ -363,16 +363,16 @@ export function ItemDetailModal({
               )}
             </div>
 
-            <div className="flex justify-between pt-4 border-t">
-              <div className="text-sm text-muted-foreground">
+            <div className="flex justify-between items-center pt-4 border-t">
+              <Button variant="destructive" size="sm" onClick={handleDelete}>
+                Delete Item
+              </Button>
+              <div className="text-sm text-muted-foreground text-right">
                 <p>Worn {currentData.timesWorn} times</p>
                 {currentData.lastWorn && (
                   <p>Last worn: {new Date(currentData.lastWorn).toLocaleDateString()}</p>
                 )}
               </div>
-              <Button variant="destructive" size="sm" onClick={handleDelete}>
-                Delete Item
-              </Button>
             </div>
           </TabsContent>
 
