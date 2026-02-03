@@ -244,6 +244,105 @@ export async function deleteOutfit(id: string) {
   revalidatePath("/outfits");
 }
 
+// Chat Session Actions
+export async function getChatSessions() {
+  const person = await getOrCreatePerson();
+
+  return prisma.chatSession.findMany({
+    where: { personId: person.id },
+    orderBy: { updatedAt: "desc" },
+    include: {
+      messages: {
+        take: 1,
+        orderBy: { createdAt: "asc" },
+      },
+    },
+  });
+}
+
+export async function getChatSession(id: string) {
+  const person = await getOrCreatePerson();
+
+  return prisma.chatSession.findFirst({
+    where: { id, personId: person.id },
+    include: {
+      messages: {
+        orderBy: { createdAt: "asc" },
+      },
+    },
+  });
+}
+
+export async function createChatSession(title?: string) {
+  const person = await getOrCreatePerson();
+
+  const session = await prisma.chatSession.create({
+    data: {
+      personId: person.id,
+      title: title || "New Chat",
+    },
+  });
+
+  revalidatePath("/chat");
+  return session;
+}
+
+export async function addChatMessage(
+  sessionId: string,
+  role: string,
+  content: string,
+  suggestedOutfitIds?: string[]
+) {
+  const person = await getOrCreatePerson();
+
+  // Verify ownership
+  const session = await prisma.chatSession.findFirst({
+    where: { id: sessionId, personId: person.id },
+  });
+
+  if (!session) {
+    throw new Error("Chat session not found");
+  }
+
+  const message = await prisma.chatMessage.create({
+    data: {
+      sessionId,
+      role,
+      content,
+      suggestedOutfitIds: suggestedOutfitIds || [],
+    },
+  });
+
+  // Update session title from first user message if untitled
+  if (role === "user" && session.title === "New Chat") {
+    await prisma.chatSession.update({
+      where: { id: sessionId },
+      data: {
+        title: content.slice(0, 50) + (content.length > 50 ? "..." : ""),
+        updatedAt: new Date(),
+      },
+    });
+  } else {
+    await prisma.chatSession.update({
+      where: { id: sessionId },
+      data: { updatedAt: new Date() },
+    });
+  }
+
+  revalidatePath("/chat");
+  return message;
+}
+
+export async function deleteChatSession(id: string) {
+  const person = await getOrCreatePerson();
+
+  await prisma.chatSession.deleteMany({
+    where: { id, personId: person.id },
+  });
+
+  revalidatePath("/chat");
+}
+
 export async function updateOutfit(
   id: string,
   data: {
