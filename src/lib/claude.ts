@@ -44,7 +44,8 @@ export interface ClothingAnalysis {
 }
 
 export async function analyzeClothingImage(
-  imageUrl: string
+  imageData: string,
+  mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp" = "image/jpeg"
 ): Promise<ClothingAnalysis> {
   const response = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
@@ -55,7 +56,7 @@ export async function analyzeClothingImage(
         content: [
           {
             type: "image",
-            source: { type: "url", url: imageUrl },
+            source: { type: "base64", media_type: mediaType, data: imageData },
           },
           {
             type: "text",
