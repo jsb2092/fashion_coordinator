@@ -174,11 +174,17 @@ interface OutfitHistory {
   lastWorn?: Date | null;
 }
 
+interface ConversationMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
 export async function getOutfitSuggestion(
   userMessage: string,
   wardrobeItems: WardrobeItemSummary[],
   userPreferences: UserPreferences | null,
-  recentOutfits: OutfitHistory[]
+  recentOutfits: OutfitHistory[],
+  conversationHistory: ConversationMessage[] = []
 ): Promise<OutfitSuggestion> {
   const systemPrompt = `You are a personal fashion stylist helping with wardrobe questions and outfit creation. You have access to the user's complete wardrobe and their style preferences.
 
@@ -227,14 +233,8 @@ For PACKING LISTS / MULTI-ITEM REQUESTS, include:
 - itemLists: array of {category: "Tops", itemIds: ["id1", "id2"]} objects
   Categories like: "Bottoms", "Tops", "Layering", "Shoes", "Accessories", etc.`;
 
-  const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-20250514",
-    max_tokens: 2048,
-    system: systemPrompt,
-    messages: [
-      {
-        role: "user",
-        content: `
+  // Build wardrobe context to include with first user message
+  const wardrobeContext = `
 My wardrobe:
 ${JSON.stringify(wardrobeItems, null, 2)}
 
@@ -243,12 +243,34 @@ ${JSON.stringify(userPreferences || {}, null, 2)}
 
 Recent outfits worn:
 ${JSON.stringify(recentOutfits.slice(0, 5), null, 2)}
+`;
 
-User request: ${userMessage}
+  // Build messages array with conversation history
+  const messages: Array<{ role: "user" | "assistant"; content: string }> = [];
 
-Determine if this needs a new outfit or is just a question. Return only valid JSON.`,
-      },
-    ],
+  // Add conversation history (skip welcome message)
+  for (const msg of conversationHistory) {
+    if (msg.content.includes("I'm here to help you put together")) continue; // Skip welcome
+    messages.push({
+      role: msg.role,
+      content: msg.content,
+    });
+  }
+
+  // Add current user message with wardrobe context if first message, otherwise just the message
+  const isFirstMessage = messages.length === 0;
+  messages.push({
+    role: "user",
+    content: isFirstMessage
+      ? `${wardrobeContext}\n\nUser request: ${userMessage}\n\nReturn only valid JSON.`
+      : `${userMessage}\n\nReturn only valid JSON.`,
+  });
+
+  const response = await anthropic.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 2048,
+    system: systemPrompt + (isFirstMessage ? "" : `\n\nWardrobe context:\n${wardrobeContext}`),
+    messages,
   });
 
   const text =

@@ -72,6 +72,12 @@ export async function POST(request: NextRequest) {
       lastWorn: o.lastWorn,
     }));
 
+    // Build conversation history (exclude the current message)
+    const conversationHistory = messages.slice(0, -1).map((m: { role: string; content: string }) => ({
+      role: m.role as "user" | "assistant",
+      content: m.content,
+    }));
+
     const suggestion = await getOutfitSuggestion(
       lastUserMessage,
       wardrobeItems.map((item) => ({
@@ -87,7 +93,8 @@ export async function POST(request: NextRequest) {
         timesWorn: item.timesWorn,
       })),
       person.preferences as Record<string, unknown> | null,
-      outfitHistory
+      outfitHistory,
+      conversationHistory
     );
 
     let content = suggestion.reasoning;
