@@ -4,7 +4,9 @@ import { analyzeClothingImage } from "@/lib/claude";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import sharp from "sharp";
 
-const MAX_IMAGE_SIZE = 4 * 1024 * 1024; // 4MB to be safe (Claude limit is 5MB)
+// Claude's 5MB limit is for base64, which is ~33% larger than raw bytes
+// So raw image must be under ~3.75MB to be safe after base64 encoding
+const MAX_IMAGE_SIZE = 3.5 * 1024 * 1024;
 
 const s3Client = new S3Client({
   endpoint: process.env.AWS_ENDPOINT_URL_S3,
@@ -59,19 +61,31 @@ export async function POST(request: NextRequest) {
     let imageBuffer: Buffer = Buffer.from(bodyBytes);
     let mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp" = "image/jpeg";
 
-    // Resize if image is too large for Claude API (5MB limit)
+    // Resize if image is too large for Claude API (5MB base64 limit)
     if (imageBuffer.length > MAX_IMAGE_SIZE) {
       console.log(`Image too large (${(imageBuffer.length / 1024 / 1024).toFixed(2)}MB), resizing...`);
 
-      // Resize to max 1500px on longest side and convert to JPEG for smaller size
-      const resized = await sharp(imageBuffer)
-        .resize(1500, 1500, { fit: "inside", withoutEnlargement: true })
-        .jpeg({ quality: 85 })
-        .toBuffer();
-      imageBuffer = resized;
+      // Try progressively lower quality until it fits
+      let quality = 85;
+      let maxDim = 1500;
+
+      while (imageBuffer.length > MAX_IMAGE_SIZE && quality >= 50) {
+        const resized = await sharp(Buffer.from(bodyBytes))
+          .resize(maxDim, maxDim, { fit: "inside", withoutEnlargement: true })
+          .jpeg({ quality })
+          .toBuffer();
+        imageBuffer = resized;
+
+        if (imageBuffer.length > MAX_IMAGE_SIZE) {
+          quality -= 10;
+          if (quality >= 50 && maxDim > 1000) {
+            maxDim -= 250;
+          }
+        }
+      }
 
       mediaType = "image/jpeg";
-      console.log(`Resized to ${(imageBuffer.length / 1024 / 1024).toFixed(2)}MB`);
+      console.log(`Resized to ${(imageBuffer.length / 1024 / 1024).toFixed(2)}MB (quality: ${quality}, maxDim: ${maxDim})`);
     } else {
       // Determine media type from original
       const contentType = s3Response.ContentType || "image/jpeg";
