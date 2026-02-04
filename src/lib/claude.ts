@@ -43,24 +43,40 @@ export interface ClothingAnalysis {
   styleNotes: string;
 }
 
+interface ImageInput {
+  base64: string;
+  mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp";
+}
+
 export async function analyzeClothingImage(
-  imageData: string,
-  mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp" = "image/jpeg"
+  images: ImageInput | ImageInput[]
 ): Promise<ClothingAnalysis> {
-  const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-20250514",
-    max_tokens: 1024,
-    messages: [
-      {
-        role: "user",
-        content: [
-          {
-            type: "image",
-            source: { type: "base64", media_type: mediaType, data: imageData },
-          },
-          {
-            type: "text",
-            text: `Analyze this clothing item photo and provide structured data in JSON format.
+  // Normalize to array
+  const imageArray = Array.isArray(images) ? images : [images];
+
+  // Build content array with all images first, then the text prompt
+  type MediaType = "image/jpeg" | "image/png" | "image/gif" | "image/webp";
+  const content: Array<
+    | { type: "image"; source: { type: "base64"; media_type: MediaType; data: string } }
+    | { type: "text"; text: string }
+  > = [];
+
+  // Add all images
+  for (const img of imageArray) {
+    content.push({
+      type: "image" as const,
+      source: { type: "base64" as const, media_type: img.mediaType, data: img.base64 },
+    });
+  }
+
+  // Add the analysis prompt
+  const multiImageNote = imageArray.length > 1
+    ? "Multiple images are provided - these may include the clothing item from different angles and/or tags/labels showing brand and material information. Use ALL images to gather complete information.\n\n"
+    : "";
+
+  content.push({
+    type: "text",
+    text: `${multiImageNote}Analyze this clothing item and provide structured data in JSON format.
 
 Be specific about colors - use descriptive names like "navy blue", "charcoal grey", "burgundy", "light brown", "mint green" rather than generic "blue", "grey", etc.
 
@@ -83,14 +99,21 @@ Return a JSON object with these fields:
 - colorPrimary (main color)
 - colorSecondary (secondary color if applicable, null if solid)
 - pattern (from patterns list)
-- material (best guess: cotton, wool, polyester, leather, etc.)
+- material (from tag if visible, otherwise best guess: cotton, wool, polyester, leather, etc.)
 - formalityLevel (1-5)
 - construction (for blazers/jackets: "structured" or "unstructured", otherwise null)
 - seasonSuitability (array of appropriate seasons)
-- brandGuess (if visible or recognizable, otherwise null)
+- brandGuess (READ FROM TAG if visible, otherwise guess from style/quality, null if unknown)
 - styleNotes (brief styling observations)`,
-          },
-        ],
+  });
+
+  const response = await anthropic.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 1024,
+    messages: [
+      {
+        role: "user",
+        content,
       },
     ],
   });

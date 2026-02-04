@@ -25,77 +25,91 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { imageUrl } = await request.json();
+    const body = await request.json();
+    // Support both single imageUrl and array of imageUrls
+    const imageUrls: string[] = body.imageUrls || (body.imageUrl ? [body.imageUrl] : []);
 
-    if (!imageUrl) {
+    if (imageUrls.length === 0) {
       return NextResponse.json(
-        { error: "Missing imageUrl" },
+        { error: "Missing imageUrl or imageUrls" },
         { status: 400 }
       );
     }
 
-    // Extract key from the URL (format: /api/upload/image/KEY)
-    const keyMatch = imageUrl.match(/\/api\/upload\/image\/(.+)$/);
-    if (!keyMatch) {
-      return NextResponse.json(
-        { error: "Invalid image URL format" },
-        { status: 400 }
-      );
-    }
+    // Process all images
+    const images: Array<{ base64: string; mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp" }> = [];
 
-    const key = decodeURIComponent(keyMatch[1]);
-
-    // Fetch image from S3
-    const command = new GetObjectCommand({
-      Bucket: process.env.AWS_S3_BUCKET_NAME!,
-      Key: key,
-    });
-
-    const s3Response = await s3Client.send(command);
-    const bodyBytes = await s3Response.Body?.transformToByteArray();
-
-    if (!bodyBytes) {
-      throw new Error("Failed to read image from S3");
-    }
-
-    let imageBuffer: Buffer = Buffer.from(bodyBytes);
-    let mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp" = "image/jpeg";
-
-    // Resize if image is too large for Claude API (5MB base64 limit)
-    if (imageBuffer.length > MAX_IMAGE_SIZE) {
-      console.log(`Image too large (${(imageBuffer.length / 1024 / 1024).toFixed(2)}MB), resizing...`);
-
-      // Try progressively lower quality until it fits
-      let quality = 85;
-      let maxDim = 1500;
-
-      while (imageBuffer.length > MAX_IMAGE_SIZE && quality >= 50) {
-        const resized = await sharp(Buffer.from(bodyBytes))
-          .resize(maxDim, maxDim, { fit: "inside", withoutEnlargement: true })
-          .jpeg({ quality })
-          .toBuffer();
-        imageBuffer = resized;
-
-        if (imageBuffer.length > MAX_IMAGE_SIZE) {
-          quality -= 10;
-          if (quality >= 50 && maxDim > 1000) {
-            maxDim -= 250;
-          }
-        }
+    for (const imageUrl of imageUrls) {
+      // Extract key from the URL (format: /api/upload/image/KEY)
+      const keyMatch = imageUrl.match(/\/api\/upload\/image\/(.+)$/);
+      if (!keyMatch) {
+        console.warn(`Invalid image URL format: ${imageUrl}`);
+        continue;
       }
 
-      mediaType = "image/jpeg";
-      console.log(`Resized to ${(imageBuffer.length / 1024 / 1024).toFixed(2)}MB (quality: ${quality}, maxDim: ${maxDim})`);
-    } else {
-      // Determine media type from original
-      const contentType = s3Response.ContentType || "image/jpeg";
-      mediaType = contentType.startsWith("image/")
-        ? contentType as "image/jpeg" | "image/png" | "image/gif" | "image/webp"
-        : "image/jpeg";
+      const key = decodeURIComponent(keyMatch[1]);
+
+      // Fetch image from S3
+      const command = new GetObjectCommand({
+        Bucket: process.env.AWS_S3_BUCKET_NAME!,
+        Key: key,
+      });
+
+      const s3Response = await s3Client.send(command);
+      const bodyBytes = await s3Response.Body?.transformToByteArray();
+
+      if (!bodyBytes) {
+        console.warn(`Failed to read image from S3: ${key}`);
+        continue;
+      }
+
+      let imageBuffer: Buffer = Buffer.from(bodyBytes);
+      let mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp" = "image/jpeg";
+
+      // Resize if image is too large for Claude API (5MB base64 limit)
+      if (imageBuffer.length > MAX_IMAGE_SIZE) {
+        console.log(`Image too large (${(imageBuffer.length / 1024 / 1024).toFixed(2)}MB), resizing...`);
+
+        // Try progressively lower quality until it fits
+        let quality = 85;
+        let maxDim = 1500;
+
+        while (imageBuffer.length > MAX_IMAGE_SIZE && quality >= 50) {
+          const resized = await sharp(Buffer.from(bodyBytes))
+            .resize(maxDim, maxDim, { fit: "inside", withoutEnlargement: true })
+            .jpeg({ quality })
+            .toBuffer();
+          imageBuffer = resized;
+
+          if (imageBuffer.length > MAX_IMAGE_SIZE) {
+            quality -= 10;
+            if (quality >= 50 && maxDim > 1000) {
+              maxDim -= 250;
+            }
+          }
+        }
+
+        mediaType = "image/jpeg";
+        console.log(`Resized to ${(imageBuffer.length / 1024 / 1024).toFixed(2)}MB (quality: ${quality}, maxDim: ${maxDim})`);
+      } else {
+        // Determine media type from original
+        const contentType = s3Response.ContentType || "image/jpeg";
+        mediaType = contentType.startsWith("image/")
+          ? contentType as "image/jpeg" | "image/png" | "image/gif" | "image/webp"
+          : "image/jpeg";
+      }
+
+      images.push({
+        base64: imageBuffer.toString("base64"),
+        mediaType,
+      });
     }
 
-    const base64Data = imageBuffer.toString("base64");
-    const analysis = await analyzeClothingImage(base64Data, mediaType);
+    if (images.length === 0) {
+      throw new Error("No valid images to analyze");
+    }
+
+    const analysis = await analyzeClothingImage(images);
 
     return NextResponse.json(analysis);
   } catch (error) {

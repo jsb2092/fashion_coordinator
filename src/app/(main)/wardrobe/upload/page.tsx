@@ -78,7 +78,7 @@ export default function UploadPage() {
         const analyzeRes = await fetch("/api/upload/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ imageUrl: urls[0] }),
+          body: JSON.stringify({ imageUrls: urls }),
         });
 
         if (!analyzeRes.ok) {
