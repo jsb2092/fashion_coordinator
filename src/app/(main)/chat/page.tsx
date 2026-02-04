@@ -38,11 +38,17 @@ interface SuggestedOutfit {
   formalityScore: number;
 }
 
+interface ItemList {
+  category: string;
+  items: OutfitItem[];
+}
+
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
   suggestedOutfit?: SuggestedOutfit;
+  itemLists?: ItemList[];
 }
 
 interface ChatSession {
@@ -194,6 +200,7 @@ export default function ChatPage() {
         role: "assistant",
         content: data.content,
         suggestedOutfit: data.suggestedOutfit,
+        itemLists: data.itemLists,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -415,6 +422,40 @@ export default function ChatPage() {
                       onSave={() => handleSaveOutfit(message.suggestedOutfit!)}
                       onRequestReplacement={handleRequestReplacement}
                     />
+                  )}
+
+                  {/* Item Lists (Packing Lists, etc.) */}
+                  {message.itemLists && message.itemLists.length > 0 && (
+                    <div className="space-y-4 w-full">
+                      {message.itemLists.map((list, listIndex) => (
+                        <div key={listIndex} className="bg-muted/50 rounded-lg p-4">
+                          <h4 className="font-semibold mb-3">{list.category}</h4>
+                          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                            {list.items.map((item) => (
+                              <div key={item.id} className="group">
+                                <div className="aspect-square rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+                                  {item.photoUrls[0] ? (
+                                    <img
+                                      src={item.photoUrls[0]}
+                                      alt={item.category}
+                                      className="max-w-full max-h-full object-contain"
+                                    />
+                                  ) : (
+                                    <div className="text-center text-xs text-muted-foreground p-1">
+                                      <p className="font-medium">{item.category}</p>
+                                      <p>{item.colorPrimary}</p>
+                                    </div>
+                                  )}
+                                </div>
+                                <p className="text-xs text-center mt-1 truncate text-muted-foreground">
+                                  {item.colorPrimary} {item.category.toLowerCase()}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
                 {message.role === "user" && (

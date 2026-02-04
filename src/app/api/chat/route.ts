@@ -122,6 +122,26 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Check if there are item lists (packing list, etc.)
+    if (suggestion.itemLists && suggestion.itemLists.length > 0) {
+      const itemLists = suggestion.itemLists.map((list) => ({
+        category: list.category,
+        items: wardrobeItems
+          .filter((item) => list.itemIds.includes(item.id))
+          .map((item) => ({
+            id: item.id,
+            category: item.category,
+            subcategory: item.subcategory,
+            colorPrimary: item.colorPrimary,
+            colorSecondary: item.colorSecondary,
+            pattern: item.pattern,
+            photoUrls: item.photoUrls,
+          })),
+      }));
+
+      return NextResponse.json({ content, itemLists });
+    }
+
     // Just a question/advice response, no outfit
     return NextResponse.json({ content });
   } catch (error) {

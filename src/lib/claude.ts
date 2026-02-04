@@ -141,6 +141,11 @@ export interface OutfitSuggestion {
     itemId: string;
     reason: string;
   }[];
+  // For packing lists and multi-category item suggestions
+  itemLists?: {
+    category: string;
+    itemIds: string[];
+  }[];
 }
 
 interface WardrobeItemSummary {
@@ -189,20 +194,27 @@ Style rules to follow:
 - Short-sleeve button-ups are inherently casual (formality 2-3)
 - Seersucker and linen are spring/summer only
 
-IMPORTANT: Determine if the user needs a NEW outfit or is just asking a question/follow-up about an existing outfit or general style advice.
+IMPORTANT: Determine what the user is asking for:
 
-For QUESTIONS (what color belt, what shoes go with X, can I wear Y with Z, follow-up questions about a previously suggested outfit, etc.):
-- Set needsOutfit: false
-- Provide helpful advice in the "reasoning" field
-- Do NOT suggest a complete outfit
+1. QUESTIONS (what color belt, what shoes go with X, can I wear Y with Z, follow-ups):
+   - Set needsOutfit: false
+   - Provide helpful advice in the "reasoning" field
+   - Do NOT include any item IDs in the reasoning text
 
-For NEW OUTFIT REQUESTS (what to wear to an event, build me an outfit, etc.):
-- Set needsOutfit: true
-- Include all outfit fields
+2. SINGLE OUTFIT REQUEST (what to wear to dinner, build me an outfit):
+   - Set needsOutfit: true
+   - Include outfit fields (outfitName, itemIds, etc.)
+
+3. PACKING LIST / MULTI-ITEM REQUEST (what to pack for a trip, wardrobe essentials):
+   - Set needsOutfit: false
+   - Include "itemLists" array with categorized items
+   - The UI will display these as cards with images
+
+CRITICAL: NEVER include raw item IDs in the "reasoning" text. The user cannot see what items these IDs refer to. Instead, describe items naturally (e.g., "your navy quarter-zip sweater" not "navy quarter-zip (cml6xxx)"). Item IDs should ONLY appear in the structured fields (itemIds, itemLists) where the UI will render them as images.
 
 Always respond with a valid JSON object containing:
-- needsOutfit: boolean - false for questions/advice, true for new outfit requests
-- reasoning: your response/advice to the user (REQUIRED)
+- needsOutfit: boolean - true only for single outfit requests
+- reasoning: your response/advice to the user (REQUIRED, NO item IDs in this text!)
 
 If needsOutfit is true, ALSO include:
 - outfitName: descriptive name for this outfit
@@ -210,7 +222,10 @@ If needsOutfit is true, ALSO include:
 - occasionType: MUST be one of: CASUAL, SMART_CASUAL, BUSINESS_CASUAL, BUSINESS_FORMAL, BLACK_TIE, DATE_NIGHT, CHURCH, TRAVEL, OUTDOOR, ATHLETIC, OTHER
 - formalityScore: 1-5 rating
 - stylingTips: additional styling advice
-- alternatives: optional array of {itemId, reason} for swap suggestions`;
+
+For PACKING LISTS / MULTI-ITEM REQUESTS, include:
+- itemLists: array of {category: "Tops", itemIds: ["id1", "id2"]} objects
+  Categories like: "Bottoms", "Tops", "Layering", "Shoes", "Accessories", etc.`;
 
   const response = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
