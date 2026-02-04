@@ -245,32 +245,29 @@ Recent outfits worn:
 ${JSON.stringify(recentOutfits.slice(0, 5), null, 2)}
 `;
 
-  // Build messages array with conversation history
-  const messages: Array<{ role: "user" | "assistant"; content: string }> = [];
+  // Build conversation summary from history for context
+  // Only include user messages since assistant responses are text (not JSON)
+  const previousUserRequests = conversationHistory
+    .filter(msg => msg.role === "user")
+    .filter(msg => !msg.content.includes("I'm here to help")) // Skip if somehow included
+    .map(msg => msg.content);
 
-  // Add conversation history (skip welcome message)
-  for (const msg of conversationHistory) {
-    if (msg.content.includes("I'm here to help you put together")) continue; // Skip welcome
-    messages.push({
-      role: msg.role,
-      content: msg.content,
-    });
+  // Build the full context including previous requests
+  let conversationContext = "";
+  if (previousUserRequests.length > 0) {
+    conversationContext = `\n\nPrevious requests in this conversation:\n${previousUserRequests.map((req, i) => `${i + 1}. ${req}`).join("\n")}\n\nThe user is now following up on the above. Consider the full conversation context.`;
   }
-
-  // Add current user message with wardrobe context if first message, otherwise just the message
-  const isFirstMessage = messages.length === 0;
-  messages.push({
-    role: "user",
-    content: isFirstMessage
-      ? `${wardrobeContext}\n\nUser request: ${userMessage}\n\nReturn only valid JSON.`
-      : `${userMessage}\n\nReturn only valid JSON.`,
-  });
 
   const response = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
     max_tokens: 2048,
-    system: systemPrompt + (isFirstMessage ? "" : `\n\nWardrobe context:\n${wardrobeContext}`),
-    messages,
+    system: systemPrompt,
+    messages: [
+      {
+        role: "user",
+        content: `${wardrobeContext}${conversationContext}\n\nCurrent request: ${userMessage}\n\nReturn only valid JSON.`,
+      },
+    ],
   });
 
   const text =
