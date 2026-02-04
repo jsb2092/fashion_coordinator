@@ -10,14 +10,39 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ITEM_STATUSES, FORMALITY_LEVELS } from "@/constants/categories";
+import { updateWardrobeItem } from "@/lib/actions";
+import { toast } from "sonner";
 
 interface WardrobeGridProps {
   items: WardrobeItem[];
 }
 
 export function WardrobeGrid({ items }: WardrobeGridProps) {
-  const [previewItem, setPreviewItem] = useState<WardrobeItem | null>(null);
-  const [detailItem, setDetailItem] = useState<WardrobeItem | null>(null);
+  const [selectedItem, setSelectedItem] = useState<WardrobeItem | null>(null);
+  const [editItem, setEditItem] = useState<WardrobeItem | null>(null);
+  const [isChangingStatus, setIsChangingStatus] = useState(false);
+
+  const handleQuickStatusChange = async (newStatus: string) => {
+    if (!selectedItem) return;
+    setIsChangingStatus(true);
+    try {
+      await updateWardrobeItem(selectedItem.id, { status: newStatus });
+      setSelectedItem({ ...selectedItem, status: newStatus as WardrobeItem["status"] });
+      toast.success(`Status changed to ${ITEM_STATUSES.find(s => s.value === newStatus)?.label || newStatus}`);
+    } catch {
+      toast.error("Failed to update status");
+    } finally {
+      setIsChangingStatus(false);
+    }
+  };
 
   if (items.length === 0) {
     return (
@@ -45,13 +70,6 @@ export function WardrobeGrid({ items }: WardrobeGridProps) {
     );
   }
 
-  const openDetails = () => {
-    if (previewItem) {
-      setDetailItem(previewItem);
-      setPreviewItem(null);
-    }
-  };
-
   return (
     <>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
@@ -59,47 +77,141 @@ export function WardrobeGrid({ items }: WardrobeGridProps) {
           <WardrobeItemCard
             key={item.id}
             item={item}
-            onClick={() => setPreviewItem(item)}
+            onClick={() => setSelectedItem(item)}
           />
         ))}
       </div>
 
-      {/* Photo Preview Modal */}
-      <Dialog open={!!previewItem} onOpenChange={(open) => !open && setPreviewItem(null)}>
-        <DialogContent className="max-w-2xl p-0 overflow-hidden">
-          {previewItem && (
-            <div className="flex flex-col">
-              {/* Large Photo */}
-              <div className="relative bg-muted flex items-center justify-center min-h-[400px] max-h-[70vh]">
-                {previewItem.photoUrls[0] ? (
+      {/* Combined Photo + Details Modal */}
+      <Dialog open={!!selectedItem} onOpenChange={(open) => !open && setSelectedItem(null)}>
+        <DialogContent className="max-w-4xl p-0 overflow-hidden">
+          {selectedItem && (
+            <div className="flex flex-col md:flex-row">
+              {/* Photo Side */}
+              <div className="md:w-1/2 bg-muted flex items-center justify-center min-h-[300px] md:min-h-[500px]">
+                {selectedItem.photoUrls[0] ? (
                   <img
-                    src={previewItem.photoUrls[0]}
-                    alt={previewItem.category}
-                    className="max-w-full max-h-[70vh] object-contain"
+                    src={selectedItem.photoUrls[0]}
+                    alt={selectedItem.category}
+                    className="max-w-full max-h-[50vh] md:max-h-[500px] object-contain"
                   />
                 ) : (
                   <div className="text-center text-muted-foreground p-8">
-                    <p className="text-xl font-medium">{previewItem.category}</p>
-                    <p>{previewItem.colorPrimary}</p>
+                    <p className="text-2xl font-medium">{selectedItem.category}</p>
+                    <p className="text-lg">{selectedItem.colorPrimary}</p>
                   </div>
                 )}
               </div>
 
-              {/* Quick Info Bar */}
-              <div className="p-4 border-t bg-background">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="min-w-0">
-                    <h3 className="font-semibold truncate">{previewItem.category}</h3>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      <Badge variant="outline" className="text-xs">{previewItem.colorPrimary}</Badge>
-                      {previewItem.brand && (
-                        <Badge variant="secondary" className="text-xs">{previewItem.brand}</Badge>
+              {/* Details Side */}
+              <div className="md:w-1/2 p-6 overflow-y-auto max-h-[50vh] md:max-h-[500px]">
+                <h2 className="text-xl font-semibold mb-1">{selectedItem.category}</h2>
+                {selectedItem.subcategory && (
+                  <p className="text-muted-foreground mb-4">{selectedItem.subcategory}</p>
+                )}
+
+                <div className="space-y-4">
+                  {/* Quick Status Change */}
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-muted-foreground w-20">Status:</span>
+                    <Select
+                      value={selectedItem.status}
+                      onValueChange={handleQuickStatusChange}
+                      disabled={isChangingStatus}
+                    >
+                      <SelectTrigger className="w-[160px] h-8">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ITEM_STATUSES.map((status) => (
+                          <SelectItem key={status.value} value={status.value}>
+                            {status.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Color */}
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-muted-foreground w-20">Color:</span>
+                    <div className="flex gap-1">
+                      <Badge variant="outline">{selectedItem.colorPrimary}</Badge>
+                      {selectedItem.colorSecondary && (
+                        <Badge variant="outline">{selectedItem.colorSecondary}</Badge>
                       )}
-                      <Badge variant="outline" className="text-xs">{previewItem.status}</Badge>
                     </div>
                   </div>
-                  <Button onClick={openDetails} className="shrink-0">
-                    View Details
+
+                  {/* Pattern */}
+                  {selectedItem.pattern && selectedItem.pattern !== "Solid" && (
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm text-muted-foreground w-20">Pattern:</span>
+                      <Badge variant="outline">{selectedItem.pattern}</Badge>
+                    </div>
+                  )}
+
+                  {/* Brand */}
+                  {selectedItem.brand && (
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm text-muted-foreground w-20">Brand:</span>
+                      <span className="font-medium">{selectedItem.brand}</span>
+                    </div>
+                  )}
+
+                  {/* Material */}
+                  {selectedItem.material && (
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm text-muted-foreground w-20">Material:</span>
+                      <span>{selectedItem.material}</span>
+                    </div>
+                  )}
+
+                  {/* Formality */}
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-muted-foreground w-20">Formality:</span>
+                    <span>{FORMALITY_LEVELS.find(l => l.value === selectedItem.formalityLevel)?.label || selectedItem.formalityLevel}</span>
+                  </div>
+
+                  {/* Seasons */}
+                  <div className="flex items-start gap-3">
+                    <span className="text-sm text-muted-foreground w-20 pt-0.5">Seasons:</span>
+                    <div className="flex flex-wrap gap-1">
+                      {selectedItem.seasonSuitability.map((season) => (
+                        <Badge key={season} variant="secondary" className="text-xs">
+                          {season.replace("_", " ")}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Notes */}
+                  {selectedItem.notes && (
+                    <div className="pt-2 border-t">
+                      <p className="text-sm text-muted-foreground">{selectedItem.notes}</p>
+                    </div>
+                  )}
+
+                  {/* Wear Stats */}
+                  <div className="pt-2 border-t text-sm text-muted-foreground">
+                    <p>Worn {selectedItem.timesWorn} times</p>
+                    {selectedItem.lastWorn && (
+                      <p>Last worn: {new Date(selectedItem.lastWorn).toLocaleDateString()}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-2 mt-6 pt-4 border-t">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      setEditItem(selectedItem);
+                      setSelectedItem(null);
+                    }}
+                  >
+                    Edit Item
                   </Button>
                 </div>
               </div>
@@ -108,11 +220,11 @@ export function WardrobeGrid({ items }: WardrobeGridProps) {
         </DialogContent>
       </Dialog>
 
-      {/* Full Detail Modal */}
+      {/* Full Edit Modal */}
       <ItemDetailModal
-        item={detailItem}
-        isOpen={!!detailItem}
-        onClose={() => setDetailItem(null)}
+        item={editItem}
+        isOpen={!!editItem}
+        onClose={() => setEditItem(null)}
       />
     </>
   );

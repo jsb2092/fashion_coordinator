@@ -48,18 +48,19 @@ export function ItemDetailModal({
   const [isUploading, setIsUploading] = useState(false);
   const [isChangingStatus, setIsChangingStatus] = useState(false);
   const [formData, setFormData] = useState<Partial<WardrobeItem>>({});
-  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  const [photoUrls, setPhotoUrls] = useState<string[] | null>(null);
 
   // Reset state when item changes
   useEffect(() => {
     setIsEditing(false);
     setFormData({});
-    setPhotoUrls([]);
+    setPhotoUrls(null);
   }, [item?.id]);
 
   if (!item) return null;
 
-  const currentPhotoUrls = photoUrls.length > 0 ? photoUrls : item.photoUrls;
+  // Use local photoUrls if we've modified them, otherwise use item's photos
+  const currentPhotoUrls = photoUrls !== null ? photoUrls : item.photoUrls;
 
   const currentData = { ...item, ...formData };
 
