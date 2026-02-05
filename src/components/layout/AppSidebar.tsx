@@ -178,7 +178,7 @@ export function AppSidebar() {
     <div className="flex h-full w-64 flex-col border-r bg-background">
       <div className="flex h-16 items-center border-b px-6">
         <Link href="/" className="flex items-center gap-2">
-          <span className="text-xl font-semibold">Fashion Coordinator</span>
+          <span className="text-xl font-semibold">Outfit IQ</span>
         </Link>
       </div>
       <nav className="flex-1 space-y-1 p-4">

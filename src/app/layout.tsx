@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Fashion Coordinator",
-  description: "Personal wardrobe management with AI-powered outfit suggestions",
+  title: "Outfit IQ",
+  description: "AI-powered wardrobe management and outfit suggestions",
 };
 
 export default function RootLayout({
