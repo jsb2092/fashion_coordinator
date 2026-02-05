@@ -306,36 +306,40 @@ export function PolishInstructions({ shoes, suppliesCount }: PolishInstructionsP
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {shoes.map((shoe) => (
-              <div
-                key={shoe.id}
-                onClick={() => setSelectedShoe(shoe)}
-                className={cn(
-                  "cursor-pointer rounded-lg border-2 overflow-hidden transition-all",
-                  selectedShoe?.id === shoe.id
-                    ? "border-primary ring-2 ring-primary/20"
-                    : "border-transparent hover:border-muted-foreground/30"
-                )}
-              >
-                <div className="aspect-square bg-muted">
-                  {shoe.photoUrls[0] ? (
-                    <img
-                      src={shoe.photoUrls[0]}
-                      alt={shoe.category}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="h-full w-full flex items-center justify-center text-muted-foreground text-sm">
-                      No photo
-                    </div>
+            {shoes.map((shoe) => {
+              const isSelected = selectedShoe?.id === shoe.id;
+              const imageUrl = shoe.photoUrls && shoe.photoUrls.length > 0 ? shoe.photoUrls[0] : null;
+              return (
+                <div
+                  key={shoe.id}
+                  onClick={() => setSelectedShoe(isSelected ? null : shoe)}
+                  className={cn(
+                    "cursor-pointer rounded-lg border-2 overflow-hidden transition-all",
+                    isSelected
+                      ? "border-primary ring-2 ring-primary/20"
+                      : "border-transparent hover:border-muted-foreground/30"
                   )}
+                >
+                  <div className="aspect-square bg-muted relative">
+                    {imageUrl ? (
+                      <img
+                        src={imageUrl}
+                        alt={shoe.category}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="h-full w-full flex items-center justify-center text-muted-foreground text-sm">
+                        No photo
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-2">
+                    <p className="text-sm font-medium truncate">{shoe.category}</p>
+                    <p className="text-xs text-muted-foreground truncate">{shoe.colorPrimary}</p>
+                  </div>
                 </div>
-                <div className="p-2">
-                  <p className="text-sm font-medium truncate">{shoe.category}</p>
-                  <p className="text-xs text-muted-foreground truncate">{shoe.colorPrimary}</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </CardContent>
       </Card>
