@@ -79,6 +79,7 @@ export async function POST(request: NextRequest) {
         name: s.parentKit ? `${s.name} (from ${s.parentKit.name})` : s.name,
         category: s.category,
         subcategory: s.subcategory,
+        intendedUse: s.intendedUse,
         brand: s.brand,
         color: s.color,
         compatibleColors: s.compatibleColors,

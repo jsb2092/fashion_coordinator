@@ -62,6 +62,14 @@ enum SupplyCategory {
   OTHER
 }
 
+enum SupplyUse {
+  CLEANING
+  CONDITIONING
+  POLISHING
+  APPLICATION
+  GENERAL
+}
+
 model Person {
   id           String   @id @default(cuid())
   clerkUserId  String   @unique
@@ -261,6 +269,7 @@ model CareSupply {
   name                String
   category            SupplyCategory
   subcategory         String?
+  intendedUse         SupplyUse?
   brand               String?
   color               String?
   size                String?

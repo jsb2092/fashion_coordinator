@@ -605,6 +605,7 @@ export interface SupplyForCare {
   name: string;
   category: string;
   subcategory?: string | null;
+  intendedUse?: string | null;
   brand?: string | null;
   color?: string | null;
   compatibleColors: string[];
@@ -657,7 +658,9 @@ SHOE:
 - Brand: ${shoe.brand || "Unknown"}
 
 AVAILABLE SUPPLIES:
-${availableSupplies.map(s => `- ${s.name} (${s.category}${s.color ? `, ${s.color}` : ""})`).join("\n")}
+${availableSupplies.map(s => `- ${s.name} (${s.category}${s.subcategory ? `, ${s.subcategory}` : ""}${s.color ? `, ${s.color}` : ""}${s.intendedUse ? `, for ${s.intendedUse.toLowerCase()} only` : ""})`).join("\n")}
+
+IMPORTANT: If a supply has a specific intended use (e.g., "for cleaning only"), only recommend it for that purpose. Do not use a cleaning brush for polishing steps.
 
 CARE TYPE REQUESTED: ${careTypeDescriptions[careType]}
 

@@ -15,7 +15,7 @@ export type SupplyCategoryValue = (typeof SUPPLY_CATEGORIES)[number]["value"];
 
 export const SUPPLY_SUBCATEGORIES: Record<SupplyCategoryValue, string[]> = {
   POLISH: ["Cream polish", "Wax polish", "Liquid polish", "Edge dressing", "Renovateur"],
-  BRUSH: ["Horsehair brush", "Dauber brush", "Suede brush", "Shine brush", "Welt brush", "Cleaning brush", "Polishing brush", "Applicator brush"],
+  BRUSH: ["Horsehair brush", "Dauber brush", "Suede brush", "Shine brush", "Welt brush", "Applicator brush"],
   TREE: ["Cedar shoe tree", "Plastic shoe tree", "Boot tree", "Travel shoe tree"],
   CLEANER: ["Saddle soap", "Leather cleaner", "Suede cleaner", "Sneaker cleaner"],
   PROTECTION: ["Water repellent", "Leather conditioner", "Suede protector", "Mink oil"],
@@ -32,6 +32,14 @@ export const SUPPLY_STATUSES = [
   { value: "OUT_OF_STOCK", label: "Out of Stock" },
   { value: "ORDERED", label: "Ordered" },
   { value: "DISCONTINUED", label: "Discontinued" },
+] as const;
+
+export const SUPPLY_USES = [
+  { value: "CLEANING", label: "Cleaning" },
+  { value: "CONDITIONING", label: "Conditioning" },
+  { value: "POLISHING", label: "Polishing/Buffing" },
+  { value: "APPLICATION", label: "Application" },
+  { value: "GENERAL", label: "General" },
 ] as const;
 
 export const POLISH_COLORS = [

@@ -26,6 +26,7 @@ import {
   SUPPLY_CATEGORIES,
   SUPPLY_SUBCATEGORIES,
   SUPPLY_STATUSES,
+  SUPPLY_USES,
   POLISH_COLORS,
   COMPATIBLE_MATERIALS,
   COMMON_BRANDS,
@@ -329,6 +330,31 @@ export function SupplyDetailModal({
                   </Select>
                 ) : (
                   <p className="text-sm">{currentData.subcategory || "—"}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Intended Use</Label>
+                {isEditing ? (
+                  <Select
+                    value={currentData.intendedUse || ""}
+                    onValueChange={(v) => updateField("intendedUse", v || null)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select use" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SUPPLY_USES.map((use) => (
+                        <SelectItem key={use.value} value={use.value}>
+                          {use.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <p className="text-sm">
+                    {SUPPLY_USES.find((u) => u.value === currentData.intendedUse)?.label || "—"}
+                  </p>
                 )}
               </div>
 
