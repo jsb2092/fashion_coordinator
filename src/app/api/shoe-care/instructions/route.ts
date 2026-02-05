@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
 
     // If cache exists and supplies haven't changed since, return cached
     if (cached && cached.suppliesModifiedAt >= person.suppliesLastModified) {
-      return NextResponse.json(cached.instructions as CareInstructions);
+      return NextResponse.json(cached.instructions as unknown as CareInstructions);
     }
 
     // Get all their care supplies (excluding KIT category - we want individual items)
