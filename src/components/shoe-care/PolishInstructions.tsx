@@ -5,13 +5,6 @@ import { WardrobeItem } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
@@ -271,31 +264,41 @@ export function PolishInstructions({ shoes, suppliesCount }: PolishInstructionsP
           <CardTitle className="text-lg">What type of care?</CardTitle>
         </CardHeader>
         <CardContent>
-          <Select value={careType} onValueChange={(v) => setCareType(v as typeof careType)}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="full_polish">
-                <div>
-                  <div className="font-medium">Full Polish</div>
-                  <div className="text-xs text-muted-foreground">Complete clean, condition, and shine (monthly)</div>
+          <div className="grid gap-2">
+            {[
+              { value: "full_polish", label: "Full Polish", desc: "Complete clean, condition, and shine (monthly)" },
+              { value: "quick_clean", label: "Quick Clean", desc: "Fast brush and buff (after each wear)" },
+              { value: "deep_condition", label: "Deep Condition", desc: "Intensive treatment with renovateur (quarterly)" },
+            ].map((option) => (
+              <div
+                key={option.value}
+                onClick={() => setCareType(option.value as typeof careType)}
+                className={cn(
+                  "cursor-pointer rounded-lg border p-3 transition-all",
+                  careType === option.value
+                    ? "border-primary bg-primary/5"
+                    : "border-muted hover:border-muted-foreground/30"
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className={cn(
+                      "h-4 w-4 rounded-full border-2 flex items-center justify-center",
+                      careType === option.value ? "border-primary" : "border-muted-foreground/30"
+                    )}
+                  >
+                    {careType === option.value && (
+                      <div className="h-2 w-2 rounded-full bg-primary" />
+                    )}
+                  </div>
+                  <div>
+                    <div className="font-medium">{option.label}</div>
+                    <div className="text-xs text-muted-foreground">{option.desc}</div>
+                  </div>
                 </div>
-              </SelectItem>
-              <SelectItem value="quick_clean">
-                <div>
-                  <div className="font-medium">Quick Clean</div>
-                  <div className="text-xs text-muted-foreground">Fast brush and buff (after each wear)</div>
-                </div>
-              </SelectItem>
-              <SelectItem value="deep_condition">
-                <div>
-                  <div className="font-medium">Deep Condition</div>
-                  <div className="text-xs text-muted-foreground">Intensive treatment with renovateur (quarterly)</div>
-                </div>
-              </SelectItem>
-            </SelectContent>
-          </Select>
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
 
