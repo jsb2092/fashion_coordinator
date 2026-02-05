@@ -1,6 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
-import { generateCareInstructions } from "@/lib/claude";
+import { generateCareInstructions, CareInstructions } from "@/lib/claude";
 import prisma from "@/lib/prisma";
 
 export async function POST(request: NextRequest) {
@@ -38,6 +38,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Shoe not found" }, { status: 404 });
     }
 
+    // Check cache first
+    const cached = await prisma.careInstructionsCache.findUnique({
+      where: {
+        wardrobeItemId_careType: {
+          wardrobeItemId: shoeId,
+          careType,
+        },
+      },
+    });
+
+    // If cache exists and supplies haven't changed since, return cached
+    if (cached && cached.suppliesModifiedAt >= person.suppliesLastModified) {
+      return NextResponse.json(cached.instructions as CareInstructions);
+    }
+
     // Get all their care supplies (excluding KIT category - we want individual items)
     const supplies = await prisma.careSupply.findMany({
       where: {
@@ -50,7 +65,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Generate instructions
+    // Generate new instructions
     const instructions = await generateCareInstructions(
       {
         category: shoe.category,
@@ -71,6 +86,27 @@ export async function POST(request: NextRequest) {
       })),
       careType
     );
+
+    // Save to cache (upsert in case another request created it)
+    await prisma.careInstructionsCache.upsert({
+      where: {
+        wardrobeItemId_careType: {
+          wardrobeItemId: shoeId,
+          careType,
+        },
+      },
+      update: {
+        instructions: instructions as object,
+        suppliesModifiedAt: person.suppliesLastModified,
+      },
+      create: {
+        personId: person.id,
+        wardrobeItemId: shoeId,
+        careType,
+        instructions: instructions as object,
+        suppliesModifiedAt: person.suppliesLastModified,
+      },
+    });
 
     return NextResponse.json(instructions);
   } catch (error) {

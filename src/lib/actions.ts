@@ -496,31 +496,38 @@ export async function createCareSupply(data: {
 }) {
   const person = await getOrCreatePerson();
 
-  const supply = await prisma.careSupply.create({
-    data: {
-      personId: person.id,
-      photoUrls: data.photoUrls || [],
-      name: data.name,
-      category: data.category as never,
-      subcategory: data.subcategory,
-      brand: data.brand,
-      color: data.color,
-      size: data.size,
-      compatibleColors: data.compatibleColors || [],
-      compatibleMaterials: data.compatibleMaterials || [],
-      status: (data.status as never) || "IN_STOCK",
-      quantity: data.quantity || 1,
-      quantityUnit: data.quantityUnit,
-      reorderThreshold: data.reorderThreshold,
-      purchaseDate: data.purchaseDate,
-      purchasePrice: data.purchasePrice,
-      purchaseSource: data.purchaseSource,
-      reorderUrl: data.reorderUrl,
-      rating: data.rating,
-      notes: data.notes,
-      parentKitId: data.parentKitId,
-    },
-  });
+  const [supply] = await prisma.$transaction([
+    prisma.careSupply.create({
+      data: {
+        personId: person.id,
+        photoUrls: data.photoUrls || [],
+        name: data.name,
+        category: data.category as never,
+        subcategory: data.subcategory,
+        brand: data.brand,
+        color: data.color,
+        size: data.size,
+        compatibleColors: data.compatibleColors || [],
+        compatibleMaterials: data.compatibleMaterials || [],
+        status: (data.status as never) || "IN_STOCK",
+        quantity: data.quantity || 1,
+        quantityUnit: data.quantityUnit,
+        reorderThreshold: data.reorderThreshold,
+        purchaseDate: data.purchaseDate,
+        purchasePrice: data.purchasePrice,
+        purchaseSource: data.purchaseSource,
+        reorderUrl: data.reorderUrl,
+        rating: data.rating,
+        notes: data.notes,
+        parentKitId: data.parentKitId,
+      },
+    }),
+    // Update suppliesLastModified for cache invalidation
+    prisma.person.update({
+      where: { id: person.id },
+      data: { suppliesLastModified: new Date() },
+    }),
+  ]);
 
   revalidatePath("/shoe-care");
   return supply;
@@ -552,27 +559,40 @@ export async function updateCareSupply(
 ) {
   const person = await getOrCreatePerson();
 
-  const supply = await prisma.careSupply.updateMany({
-    where: {
-      id,
-      personId: person.id,
-    },
-    data: data as never,
-  });
+  await prisma.$transaction([
+    prisma.careSupply.updateMany({
+      where: {
+        id,
+        personId: person.id,
+      },
+      data: data as never,
+    }),
+    // Update suppliesLastModified for cache invalidation
+    prisma.person.update({
+      where: { id: person.id },
+      data: { suppliesLastModified: new Date() },
+    }),
+  ]);
 
   revalidatePath("/shoe-care");
-  return supply;
 }
 
 export async function deleteCareSupply(id: string) {
   const person = await getOrCreatePerson();
 
-  await prisma.careSupply.deleteMany({
-    where: {
-      id,
-      personId: person.id,
-    },
-  });
+  await prisma.$transaction([
+    prisma.careSupply.deleteMany({
+      where: {
+        id,
+        personId: person.id,
+      },
+    }),
+    // Update suppliesLastModified for cache invalidation
+    prisma.person.update({
+      where: { id: person.id },
+      data: { suppliesLastModified: new Date() },
+    }),
+  ]);
 
   revalidatePath("/shoe-care");
 }

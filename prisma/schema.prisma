@@ -72,10 +72,14 @@ model Person {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  wardrobeItems WardrobeItem[]
-  outfits       Outfit[]
-  chatSessions  ChatSession[]
-  careSupplies  CareSupply[]
+  // Track when supplies were last modified for cache invalidation
+  suppliesLastModified DateTime @default(now())
+
+  wardrobeItems          WardrobeItem[]
+  outfits                Outfit[]
+  chatSessions           ChatSession[]
+  careSupplies           CareSupply[]
+  careInstructionsCache  CareInstructionsCache[]
 }
 
 model WardrobeItem {
@@ -118,8 +122,9 @@ model WardrobeItem {
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
 
-  outfitItems      OutfitItem[]
-  supplyLinks      ShoeSupplyLink[]
+  outfitItems           OutfitItem[]
+  supplyLinks           ShoeSupplyLink[]
+  careInstructionsCache CareInstructionsCache[]
 
   @@index([personId])
   @@index([category])
@@ -308,5 +313,24 @@ model ShoeSupplyLink {
 
   @@unique([careSupplyId, wardrobeItemId])
   @@index([careSupplyId])
+  @@index([wardrobeItemId])
+}
+
+model CareInstructionsCache {
+  id               String       @id @default(cuid())
+  personId         String
+  person           Person       @relation(fields: [personId], references: [id], onDelete: Cascade)
+  wardrobeItemId   String
+  wardrobeItem     WardrobeItem @relation(fields: [wardrobeItemId], references: [id], onDelete: Cascade)
+
+  careType         String       // full_polish, quick_clean, deep_condition
+  instructions     Json         // Cached CareInstructions object
+  suppliesModifiedAt DateTime   // When supplies were last modified at cache time
+
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@unique([wardrobeItemId, careType])
+  @@index([personId])
   @@index([wardrobeItemId])
 }
