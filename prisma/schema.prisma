@@ -86,6 +86,10 @@ model Person {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  // Onboarding
+  hasCompletedOnboarding Boolean   @default(false)
+  onboardingCompletedAt  DateTime?
+
   // Track when supplies were last modified for cache invalidation
   suppliesLastModified DateTime @default(now())
 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import { resetOnboarding } from "@/lib/onboarding/actions";
 
 interface Preferences {
   preferredColors?: string[];
@@ -26,10 +28,12 @@ interface Measurements {
 
 export default function SettingsPage() {
   const { user } = useUser();
+  const router = useRouter();
   const [preferences, setPreferences] = useState<Preferences>({});
   const [measurements, setMeasurements] = useState<Measurements>({});
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isResetting, setIsResetting] = useState(false);
 
   useEffect(() => {
     async function loadProfile() {
@@ -251,6 +255,36 @@ export default function SettingsPage() {
             {isSaving ? "Saving..." : "Save Changes"}
           </Button>
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Setup Wizard</CardTitle>
+            <CardDescription>
+              Restart the setup wizard to update your interests or see the intro again
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                setIsResetting(true);
+                try {
+                  await resetOnboarding();
+                  router.refresh();
+                  toast.success("Setup wizard will appear on next page load");
+                } catch (error) {
+                  console.error("Reset error:", error);
+                  toast.error("Failed to reset wizard");
+                } finally {
+                  setIsResetting(false);
+                }
+              }}
+              disabled={isResetting}
+            >
+              {isResetting ? "Resetting..." : "Restart Setup Wizard"}
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
