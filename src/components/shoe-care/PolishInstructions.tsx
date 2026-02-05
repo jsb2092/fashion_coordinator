@@ -224,8 +224,16 @@ export function PolishInstructions({ shoes, suppliesCount }: PolishInstructionsP
                 Previous
               </Button>
               <Button
-                onClick={() => setCurrentStep(Math.min(instructions.steps.length - 1, currentStep + 1))}
-                disabled={currentStep === instructions.steps.length - 1}
+                onClick={() => {
+                  if (currentStep === instructions.steps.length - 1) {
+                    // Done - reset to shoe selection
+                    setInstructions(null);
+                    setSelectedShoe(null);
+                    setCurrentStep(0);
+                  } else {
+                    setCurrentStep(currentStep + 1);
+                  }
+                }}
                 className="flex-1"
               >
                 {currentStep === instructions.steps.length - 1 ? "Done!" : "Next Step"}
