@@ -42,6 +42,12 @@ export const SUPPLY_USES = [
   { value: "GENERAL", label: "General" },
 ] as const;
 
+export const BUFF_ORDERS = [
+  { value: "INITIAL", label: "Initial buff (after polish)" },
+  { value: "FINAL", label: "Final buff (for shine)" },
+  { value: "EITHER", label: "Either" },
+] as const;
+
 export const POLISH_COLORS = [
   "Black",
   "Burgundy",

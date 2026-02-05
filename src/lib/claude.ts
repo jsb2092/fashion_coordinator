@@ -606,6 +606,7 @@ export interface SupplyForCare {
   category: string;
   subcategory?: string | null;
   intendedUse?: string | null;
+  buffOrder?: string | null;
   brand?: string | null;
   color?: string | null;
   compatibleColors: string[];
@@ -658,9 +659,20 @@ SHOE:
 - Brand: ${shoe.brand || "Unknown"}
 
 AVAILABLE SUPPLIES:
-${availableSupplies.map(s => `- ${s.name} (${s.category}${s.subcategory ? `, ${s.subcategory}` : ""}${s.color ? `, ${s.color}` : ""}${s.intendedUse ? `, for ${s.intendedUse.toLowerCase()} only` : ""})`).join("\n")}
+${availableSupplies.map(s => {
+  let details = [s.category];
+  if (s.subcategory) details.push(s.subcategory);
+  if (s.color) details.push(s.color);
+  if (s.intendedUse) details.push(`for ${s.intendedUse.toLowerCase()} only`);
+  if (s.buffOrder) details.push(`buff order: ${s.buffOrder.toLowerCase()}`);
+  return `- ${s.name} (${details.join(", ")})`;
+}).join("\n")}
 
-IMPORTANT: If a supply has a specific intended use (e.g., "for cleaning only"), only recommend it for that purpose. Do not use a cleaning brush for polishing steps.
+IMPORTANT RULES:
+1. If a supply has a specific intended use (e.g., "for cleaning only"), only use it for that purpose.
+2. For brushes with buff order specified: "initial" = use right after applying polish, "final" = use for last buffing step before cloth.
+3. If buff order is NOT specified but the brush name contains "Final" or "Shine", use it for final buffing. If name contains "Initial" or "First", use for initial buffing.
+4. When multiple shine/polish brushes are available for the same color, use one for initial buffing after cream polish and a different one for final shine. This keeps the final brush cleaner for a better shine.
 
 CARE TYPE REQUESTED: ${careTypeDescriptions[careType]}
 

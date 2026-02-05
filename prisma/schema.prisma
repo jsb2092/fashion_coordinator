@@ -70,6 +70,12 @@ enum SupplyUse {
   GENERAL
 }
 
+enum BuffOrder {
+  INITIAL
+  FINAL
+  EITHER
+}
+
 model Person {
   id           String   @id @default(cuid())
   clerkUserId  String   @unique
@@ -270,6 +276,7 @@ model CareSupply {
   category            SupplyCategory
   subcategory         String?
   intendedUse         SupplyUse?
+  buffOrder           BuffOrder?
   brand               String?
   color               String?
   size                String?

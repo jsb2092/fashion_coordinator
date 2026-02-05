@@ -27,6 +27,7 @@ import {
   SUPPLY_SUBCATEGORIES,
   SUPPLY_STATUSES,
   SUPPLY_USES,
+  BUFF_ORDERS,
   POLISH_COLORS,
   COMPATIBLE_MATERIALS,
   COMMON_BRANDS,
@@ -357,6 +358,33 @@ export function SupplyDetailModal({
                   </p>
                 )}
               </div>
+
+              {currentCategory === "BRUSH" && (
+                <div className="space-y-2">
+                  <Label>Buff Order</Label>
+                  {isEditing ? (
+                    <Select
+                      value={currentData.buffOrder || ""}
+                      onValueChange={(v) => updateField("buffOrder", v || null)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select order" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {BUFF_ORDERS.map((order) => (
+                          <SelectItem key={order.value} value={order.value}>
+                            {order.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <p className="text-sm">
+                      {BUFF_ORDERS.find((o) => o.value === currentData.buffOrder)?.label || "—"}
+                    </p>
+                  )}
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label>Brand</Label>

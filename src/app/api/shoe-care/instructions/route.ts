@@ -80,6 +80,7 @@ export async function POST(request: NextRequest) {
         category: s.category,
         subcategory: s.subcategory,
         intendedUse: s.intendedUse,
+        buffOrder: s.buffOrder,
         brand: s.brand,
         color: s.color,
         compatibleColors: s.compatibleColors,
