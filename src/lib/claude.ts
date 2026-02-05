@@ -426,14 +426,18 @@ export interface KitAnalysisResult {
   items: SupplyAnalysis[];
 }
 
-export async function analyzeSupplyKitFromUrl(url: string): Promise<KitAnalysisResult> {
+export async function analyzeSupplyKitFromUrl(url: string, pageContent?: string): Promise<KitAnalysisResult> {
+  const contentContext = pageContent
+    ? `Here is the page content from ${url}:\n\n${pageContent}\n\n`
+    : `URL: ${url}\n\n`;
+
   const response = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
     max_tokens: 4096,
     messages: [
       {
         role: "user",
-        content: `Analyze this shoe care product URL: ${url}
+        content: `${contentContext}Analyze this shoe care product information.
 
 Determine if this is a SINGLE PRODUCT or a KIT containing multiple items.
 

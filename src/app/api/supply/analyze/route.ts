@@ -29,7 +29,34 @@ export async function POST(request: NextRequest) {
     // If a product URL is provided (e.g., Amazon link), analyze from that
     // Uses kit analysis to detect if it's a multi-item kit
     if (productUrl) {
-      const kitAnalysis = await analyzeSupplyKitFromUrl(productUrl);
+      // Fetch the page content to give Claude context
+      let pageContent = "";
+      try {
+        const pageRes = await fetch(productUrl, {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.5",
+          },
+        });
+
+        if (pageRes.ok) {
+          const html = await pageRes.text();
+          // Extract text content, remove scripts/styles, limit size
+          pageContent = html
+            .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+            .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "")
+            .replace(/<[^>]+>/g, " ")
+            .replace(/\s+/g, " ")
+            .trim()
+            .slice(0, 15000); // Limit to ~15k chars for Claude context
+        }
+      } catch (fetchError) {
+        console.warn("Failed to fetch URL content:", fetchError);
+        // Continue without page content - Claude will try to infer from URL
+      }
+
+      const kitAnalysis = await analyzeSupplyKitFromUrl(productUrl, pageContent || undefined);
       return NextResponse.json(kitAnalysis);
     }
 
