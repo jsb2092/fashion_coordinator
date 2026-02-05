@@ -10,21 +10,25 @@ interface CareSupplyCardProps {
   onClick?: () => void;
 }
 
-function getStatusVariant(status: string): "default" | "secondary" | "destructive" | "outline" {
+function getStatusColor(status: string): string {
   switch (status) {
     case "IN_STOCK":
-      return "default";
+      return "bg-green-500";
     case "LOW_STOCK":
-      return "secondary";
+      return "bg-yellow-500 text-black";
     case "OUT_OF_STOCK":
-      return "destructive";
+      return "bg-red-500";
     case "ORDERED":
-      return "outline";
+      return "bg-blue-500";
     case "DISCONTINUED":
-      return "destructive";
+      return "bg-gray-500";
     default:
-      return "default";
+      return "bg-green-500";
   }
+}
+
+function needsAttention(status: string): boolean {
+  return status === "LOW_STOCK" || status === "OUT_OF_STOCK";
 }
 
 export function CareSupplyCard({ supply, onClick }: CareSupplyCardProps) {
@@ -64,17 +68,17 @@ export function CareSupplyCard({ supply, onClick }: CareSupplyCardProps) {
             </svg>
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-        <div className="absolute bottom-2 left-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Badge variant={getStatusVariant(supply.status)} className="text-xs">
-            {statusLabel}
-          </Badge>
-        </div>
+        {/* Always show status badge for non-IN_STOCK items */}
         {supply.status !== "IN_STOCK" && (
           <div className="absolute top-2 right-2">
-            <Badge variant={getStatusVariant(supply.status)} className="text-xs">
+            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium text-white ${getStatusColor(supply.status)}`}>
+              {needsAttention(supply.status) && (
+                <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              )}
               {statusLabel}
-            </Badge>
+            </span>
           </div>
         )}
       </div>

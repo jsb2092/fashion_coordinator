@@ -5,6 +5,7 @@ import { CareSupplyGrid } from "@/components/shoe-care/CareSupplyGrid";
 import { SupplyFilters } from "@/components/shoe-care/SupplyFilters";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 
 interface PageProps {
   searchParams: Promise<{
@@ -30,6 +31,60 @@ async function ShoeCareContent({
   ]);
 
   return <CareSupplyGrid supplies={supplies} shoes={shoes} />;
+}
+
+async function NeedsAttentionBanner() {
+  const allSupplies = await getCareSupplies({});
+
+  const lowStock = allSupplies.filter(s => s.status === "LOW_STOCK");
+  const outOfStock = allSupplies.filter(s => s.status === "OUT_OF_STOCK");
+  const ordered = allSupplies.filter(s => s.status === "ORDERED");
+
+  if (lowStock.length === 0 && outOfStock.length === 0 && ordered.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mb-6 p-4 rounded-lg border bg-muted/50">
+      <div className="flex items-start gap-3">
+        <svg className="h-5 w-5 text-yellow-600 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+        </svg>
+        <div className="flex-1">
+          <p className="font-medium text-sm">Supplies Need Attention</p>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {outOfStock.length > 0 && (
+              <Link href="/shoe-care?status=OUT_OF_STOCK">
+                <Badge variant="destructive" className="cursor-pointer">
+                  {outOfStock.length} Out of Stock
+                </Badge>
+              </Link>
+            )}
+            {lowStock.length > 0 && (
+              <Link href="/shoe-care?status=LOW_STOCK">
+                <Badge className="bg-yellow-500 hover:bg-yellow-600 text-black cursor-pointer">
+                  {lowStock.length} Low Stock
+                </Badge>
+              </Link>
+            )}
+            {ordered.length > 0 && (
+              <Link href="/shoe-care?status=ORDERED">
+                <Badge className="bg-blue-500 hover:bg-blue-600 cursor-pointer">
+                  {ordered.length} On Order
+                </Badge>
+              </Link>
+            )}
+          </div>
+          {outOfStock.length > 0 && (
+            <p className="text-xs text-muted-foreground mt-2">
+              {outOfStock.slice(0, 3).map(s => s.name).join(", ")}
+              {outOfStock.length > 3 && ` +${outOfStock.length - 3} more`}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function ShoeCareContentSkeleton() {
@@ -110,6 +165,9 @@ export default async function ShoeCareePage({ searchParams }: PageProps) {
           </Link>
           </div>
         </div>
+        <Suspense fallback={null}>
+          <NeedsAttentionBanner />
+        </Suspense>
         <Suspense fallback={<ShoeCareContentSkeleton />}>
           <ShoeCareContent searchParams={searchParams} />
         </Suspense>
