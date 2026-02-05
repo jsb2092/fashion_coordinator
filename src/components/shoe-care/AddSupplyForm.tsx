@@ -471,13 +471,13 @@ export function AddSupplyForm() {
   if (analysis || mode === "manual") {
     return (
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Photo Preview */}
-        {photoUrls.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Photos</CardTitle>
-            </CardHeader>
-            <CardContent>
+        {/* Photo Preview or Upload */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Photos</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {photoUrls.length > 0 && (
               <div className="grid grid-cols-4 gap-3">
                 {photoUrls.map((url, index) => (
                   <div key={url} className="relative aspect-square group">
@@ -498,9 +498,63 @@ export function AddSupplyForm() {
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-        )}
+            )}
+            {photoUrls.length < 5 && (
+              <div className="flex items-center gap-2">
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={async (e) => {
+                    const files = Array.from(e.target.files || []);
+                    if (files.length > 0) {
+                      // Just upload without re-analyzing
+                      for (const file of files.slice(0, 5 - photoUrls.length)) {
+                        const uploadFormData = new FormData();
+                        uploadFormData.append("file", file);
+                        const res = await fetch("/api/upload", { method: "POST", body: uploadFormData });
+                        if (res.ok) {
+                          const { url } = await res.json();
+                          setPhotoUrls(prev => [...prev, url]);
+                        }
+                      }
+                      toast.success("Photo added");
+                    }
+                  }}
+                  className="hidden"
+                  id="add-more-photos"
+                />
+                <label
+                  htmlFor="add-more-photos"
+                  className="cursor-pointer text-sm text-primary hover:underline flex items-center gap-1"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                  </svg>
+                  {photoUrls.length === 0 ? "Add photos" : "Add more photos"}
+                </label>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Reorder URL - Prominent placement */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Reorder Link</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Save a link to reorder this product when you run low
+            </p>
+          </CardHeader>
+          <CardContent>
+            <Input
+              type="url"
+              value={currentData.reorderUrl}
+              onChange={(e) => updateField("reorderUrl", e.target.value)}
+              placeholder="https://amazon.com/dp/..."
+            />
+          </CardContent>
+        </Card>
 
         {/* AI Analysis Badge */}
         {analysis && (
@@ -706,17 +760,6 @@ export function AddSupplyForm() {
                   </SelectContent>
                 </Select>
               </div>
-
-              <div className="space-y-2 col-span-2">
-                <Label htmlFor="reorderUrl">Reorder URL</Label>
-                <Input
-                  id="reorderUrl"
-                  type="url"
-                  value={currentData.reorderUrl}
-                  onChange={(e) => updateField("reorderUrl", e.target.value)}
-                  placeholder="https://amazon.com/..."
-                />
-              </div>
             </div>
           </CardContent>
         </Card>
@@ -792,123 +835,123 @@ export function AddSupplyForm() {
   // Initial mode selection
   return (
     <div className="space-y-6">
-      <Tabs value={mode} onValueChange={(v) => setMode(v as typeof mode)}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="photo">Upload Photo</TabsTrigger>
-          <TabsTrigger value="url">Product URL</TabsTrigger>
-          <TabsTrigger value="manual">Manual Entry</TabsTrigger>
-        </TabsList>
+      {/* Photo Upload */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Upload Product Photo</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Take a photo of your shoe care product and AI will identify it
+          </p>
+        </CardHeader>
+        <CardContent>
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={cn(
+              "border-2 border-dashed rounded-lg p-12 text-center transition-colors",
+              isDragging
+                ? "border-primary bg-primary/5"
+                : "border-muted-foreground/25 hover:border-muted-foreground/50",
+              isAnalyzing && "opacity-50 pointer-events-none"
+            )}
+          >
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleFileSelect}
+              className="hidden"
+              id="photo-upload"
+              disabled={isAnalyzing}
+            />
+            <label htmlFor="photo-upload" className="cursor-pointer flex flex-col items-center">
+              {isAnalyzing ? (
+                <>
+                  <svg className="animate-spin h-12 w-12 text-primary mb-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  <p className="text-sm font-medium">Analyzing with AI...</p>
+                </>
+              ) : (
+                <>
+                  <svg className="h-12 w-12 text-muted-foreground mb-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+                  </svg>
+                  <p className="text-sm font-medium">Drag and drop a photo, or click to browse</p>
+                  <p className="text-xs text-muted-foreground mt-1">AI will identify the product automatically</p>
+                </>
+              )}
+            </label>
+          </div>
+        </CardContent>
+      </Card>
 
-        <TabsContent value="photo" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Upload Product Photo</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Take a photo of your shoe care product and AI will identify it
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                className={cn(
-                  "border-2 border-dashed rounded-lg p-12 text-center transition-colors",
-                  isDragging
-                    ? "border-primary bg-primary/5"
-                    : "border-muted-foreground/25 hover:border-muted-foreground/50",
-                  isAnalyzing && "opacity-50 pointer-events-none"
-                )}
-              >
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleFileSelect}
-                  className="hidden"
-                  id="photo-upload"
-                  disabled={isAnalyzing}
-                />
-                <label htmlFor="photo-upload" className="cursor-pointer flex flex-col items-center">
-                  {isAnalyzing ? (
-                    <>
-                      <svg className="animate-spin h-12 w-12 text-primary mb-4" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                      <p className="text-sm font-medium">Analyzing with AI...</p>
-                    </>
-                  ) : (
-                    <>
-                      <svg className="h-12 w-12 text-muted-foreground mb-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
-                      </svg>
-                      <p className="text-sm font-medium">Drag and drop a photo, or click to browse</p>
-                      <p className="text-xs text-muted-foreground mt-1">AI will identify the product automatically</p>
-                    </>
-                  )}
-                </label>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+      {/* Divider */}
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-background px-2 text-muted-foreground">Or</span>
+        </div>
+      </div>
 
-        <TabsContent value="url" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Enter Product URL</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Paste an Amazon or retailer link and AI will extract the product info
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex gap-2">
-                <Input
-                  type="url"
-                  value={productUrl}
-                  onChange={(e) => setProductUrl(e.target.value)}
-                  placeholder="https://amazon.com/dp/..."
-                  className="flex-1"
-                  disabled={isAnalyzing}
-                />
-                <Button onClick={analyzeFromUrl} disabled={isAnalyzing || !productUrl.trim()}>
-                  {isAnalyzing ? (
-                    <>
-                      <svg className="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                      Analyzing...
-                    </>
-                  ) : (
-                    "Extract Info"
-                  )}
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Works best with Amazon, but supports most retailer product pages
-              </p>
-            </CardContent>
-          </Card>
-        </TabsContent>
+      {/* URL Input */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Product URL</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Paste an Amazon or retailer link to extract product info (also works for kits)
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex gap-2">
+            <Input
+              type="url"
+              value={productUrl}
+              onChange={(e) => setProductUrl(e.target.value)}
+              placeholder="https://amazon.com/dp/..."
+              className="flex-1"
+              disabled={isAnalyzing}
+            />
+            <Button onClick={analyzeFromUrl} disabled={isAnalyzing || !productUrl.trim()}>
+              {isAnalyzing ? (
+                <>
+                  <svg className="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Analyzing...
+                </>
+              ) : (
+                "Extract Info"
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
-        <TabsContent value="manual" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Manual Entry</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Enter product details manually without AI assistance
-              </p>
-            </CardHeader>
-            <CardContent>
-              <Button onClick={() => setMode("manual")} className="w-full">
-                Continue to Form
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      {/* Divider */}
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-background px-2 text-muted-foreground">Or</span>
+        </div>
+      </div>
+
+      {/* Manual Entry */}
+      <Card>
+        <CardContent className="pt-6">
+          <Button variant="outline" onClick={() => setMode("manual")} className="w-full">
+            Enter Details Manually
+          </Button>
+        </CardContent>
+      </Card>
 
       <div className="flex justify-center">
         <Button variant="ghost" onClick={() => router.push("/shoe-care")}>
