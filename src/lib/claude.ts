@@ -639,9 +639,9 @@ export async function generateCareInstructions(
   careType: "full_polish" | "quick_clean" | "deep_condition" = "full_polish"
 ): Promise<CareInstructions> {
   const careTypeDescriptions = {
-    full_polish: "Full polish and shine (monthly or every 4-6 wears)",
-    quick_clean: "Quick maintenance clean (after each wear or weekly)",
-    deep_condition: "Deep conditioning treatment (every 3-4 months or after getting wet)",
+    quick_clean: "Quick maintenance (after each wear): Brush off dirt, wipe down, insert shoe trees. No polish needed.",
+    full_polish: "Regular polish (every 4-6 wears): Brush off dust, apply cream polish, buff to shine. NO saddle soap or deep cleaning - just polish.",
+    deep_condition: "Full treatment (monthly or when dirty): Saddle soap cleaning, conditioning, AND polish. This is the complete routine.",
   };
 
   const response = await anthropic.messages.create({
@@ -675,6 +675,11 @@ IMPORTANT RULES:
 4. When multiple shine/polish brushes are available for the same color, use one for initial buffing after cream polish and a different one for final shine. This keeps the final brush cleaner for a better shine.
 
 CARE TYPE REQUESTED: ${careTypeDescriptions[careType]}
+
+CARE TYPE GUIDELINES:
+- quick_clean: Only brushing, wiping, and shoe trees. No polish, no cleaning products.
+- full_polish: Brush dust, apply cream polish, buff. Do NOT include saddle soap or leather cleaner steps.
+- deep_condition: Full routine - saddle soap/cleaner, conditioner, AND cream polish with buffing.
 
 Based on the shoe color (${shoe.colorPrimary}), recommend the best matching cream/polish from their supplies. For example:
 - Black shoes → Black cream

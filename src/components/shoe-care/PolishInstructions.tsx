@@ -266,9 +266,9 @@ export function PolishInstructions({ shoes, suppliesCount }: PolishInstructionsP
         <CardContent>
           <div className="grid gap-2">
             {[
-              { value: "full_polish", label: "Full Polish", desc: "Complete clean, condition, and shine (monthly)" },
-              { value: "quick_clean", label: "Quick Clean", desc: "Fast brush and buff (after each wear)" },
-              { value: "deep_condition", label: "Deep Condition", desc: "Intensive treatment with renovateur (quarterly)" },
+              { value: "quick_clean", label: "Quick Clean", desc: "Brush, wipe, shoe trees (after each wear)" },
+              { value: "full_polish", label: "Regular Polish", desc: "Cream polish and buff, no cleaning (every 4-6 wears)" },
+              { value: "deep_condition", label: "Full Treatment", desc: "Saddle soap, condition, and polish (monthly)" },
             ].map((option) => (
               <div
                 key={option.value}
