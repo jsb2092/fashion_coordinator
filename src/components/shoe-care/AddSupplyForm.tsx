@@ -57,6 +57,7 @@ export function AddSupplyForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [productUrl, setProductUrl] = useState("");
+  const [kitDescription, setKitDescription] = useState("");
   const [isDragging, setIsDragging] = useState(false);
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [kitAnalysis, setKitAnalysis] = useState<KitAnalysisResult | null>(null);
@@ -212,7 +213,10 @@ export function AddSupplyForm() {
       const res = await fetch("/api/supply/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productUrl: productUrl.trim() }),
+        body: JSON.stringify({
+          productUrl: productUrl.trim(),
+          kitDescription: kitDescription.trim() || undefined,
+        }),
       });
 
       if (!res.ok) {
@@ -930,6 +934,19 @@ export function AddSupplyForm() {
                 "Extract Info"
               )}
             </Button>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="kit-description" className="text-sm text-muted-foreground">
+              Kit contents (optional - helps AI identify items if not auto-detected)
+            </Label>
+            <Textarea
+              id="kit-description"
+              value={kitDescription}
+              onChange={(e) => setKitDescription(e.target.value)}
+              placeholder="e.g., 2 horsehair brushes (light and dark), black cream polish, burgundy cream polish, neutral wax, 2 microfiber cloths, shoe horn"
+              rows={3}
+              disabled={isAnalyzing}
+            />
           </div>
         </CardContent>
       </Card>

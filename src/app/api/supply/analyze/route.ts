@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { imageUrls, productUrl } = body;
+    const { imageUrls, productUrl, kitDescription } = body;
 
     // If a product URL is provided (e.g., Amazon link), analyze from that
     // Uses kit analysis to detect if it's a multi-item kit
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
         // Continue without page content - Claude will try to infer from URL
       }
 
-      const kitAnalysis = await analyzeSupplyKitFromUrl(productUrl, pageContent || undefined);
+      const kitAnalysis = await analyzeSupplyKitFromUrl(productUrl, pageContent || undefined, kitDescription || undefined);
       return NextResponse.json(kitAnalysis);
     }
 
