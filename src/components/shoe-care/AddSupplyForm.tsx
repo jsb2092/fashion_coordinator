@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   SUPPLY_CATEGORIES,
   SUPPLY_SUBCATEGORIES,
@@ -29,12 +30,38 @@ import { createCareSupply } from "@/lib/actions";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
+interface AnalysisResult {
+  name: string;
+  category: SupplyCategoryValue;
+  subcategory: string | null;
+  brand: string | null;
+  color: string | null;
+  size: string | null;
+  compatibleColors: string[];
+  compatibleMaterials: string[];
+  notes: string | null;
+  estimatedPrice: number | null;
+  reorderUrl: string | null;
+}
+
+interface KitAnalysisResult {
+  isKit: boolean;
+  kitName: string | null;
+  items: AnalysisResult[];
+}
+
 export function AddSupplyForm() {
   const router = useRouter();
+  const [mode, setMode] = useState<"photo" | "url" | "manual">("photo");
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  const [productUrl, setProductUrl] = useState("");
   const [isDragging, setIsDragging] = useState(false);
+  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
+  const [kitAnalysis, setKitAnalysis] = useState<KitAnalysisResult | null>(null);
+  const [selectedKitItems, setSelectedKitItems] = useState<Set<number>>(new Set());
+  const [addingKitItems, setAddingKitItems] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -56,8 +83,26 @@ export function AddSupplyForm() {
     notes: "",
   });
 
-  const subcategories = formData.category
-    ? SUPPLY_SUBCATEGORIES[formData.category] || []
+  // Merge analysis with form data
+  const currentData = analysis
+    ? {
+        ...formData,
+        name: formData.name || analysis.name,
+        category: formData.category || analysis.category,
+        subcategory: formData.subcategory || analysis.subcategory || "",
+        brand: formData.brand || analysis.brand || "",
+        color: formData.color || analysis.color || "",
+        size: formData.size || analysis.size || "",
+        compatibleColors: formData.compatibleColors.length > 0 ? formData.compatibleColors : analysis.compatibleColors,
+        compatibleMaterials: formData.compatibleMaterials.length > 0 ? formData.compatibleMaterials : analysis.compatibleMaterials,
+        reorderUrl: formData.reorderUrl || analysis.reorderUrl || "",
+        purchasePrice: formData.purchasePrice ?? analysis.estimatedPrice ?? undefined,
+        notes: formData.notes || analysis.notes || "",
+      }
+    : formData;
+
+  const subcategories = currentData.category
+    ? SUPPLY_SUBCATEGORIES[currentData.category as SupplyCategoryValue] || []
     : [];
 
   const updateField = <K extends keyof typeof formData>(
@@ -68,21 +113,19 @@ export function AddSupplyForm() {
   };
 
   const toggleCompatibleColor = (color: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      compatibleColors: prev.compatibleColors.includes(color)
-        ? prev.compatibleColors.filter((c) => c !== color)
-        : [...prev.compatibleColors, color],
-    }));
+    const current = currentData.compatibleColors;
+    const updated = current.includes(color)
+      ? current.filter((c) => c !== color)
+      : [...current, color];
+    updateField("compatibleColors", updated);
   };
 
   const toggleCompatibleMaterial = (material: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      compatibleMaterials: prev.compatibleMaterials.includes(material)
-        ? prev.compatibleMaterials.filter((m) => m !== material)
-        : [...prev.compatibleMaterials, material],
-    }));
+    const current = currentData.compatibleMaterials;
+    const updated = current.includes(material)
+      ? current.filter((m) => m !== material)
+      : [...current, material];
+    updateField("compatibleMaterials", updated);
   };
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -102,22 +145,23 @@ export function AddSupplyForm() {
       f.type.startsWith("image/")
     );
     if (files.length > 0) {
-      await uploadFiles(files);
+      await uploadAndAnalyze(files);
     }
   }, []);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length > 0) {
-      await uploadFiles(files);
+      await uploadAndAnalyze(files);
     }
   };
 
-  const uploadFiles = async (files: File[]) => {
-    setIsUploading(true);
+  const uploadAndAnalyze = async (files: File[]) => {
+    setIsAnalyzing(true);
     try {
+      // Upload files first
       const uploadedUrls: string[] = [];
-      for (const file of files.slice(0, 5 - photoUrls.length)) {
+      for (const file of files.slice(0, 5)) {
         const uploadFormData = new FormData();
         uploadFormData.append("file", file);
 
@@ -133,12 +177,67 @@ export function AddSupplyForm() {
         const { url } = await res.json();
         uploadedUrls.push(url);
       }
-      setPhotoUrls((prev) => [...prev, ...uploadedUrls]);
-      toast.success(`Uploaded ${uploadedUrls.length} photo${uploadedUrls.length !== 1 ? "s" : ""}`);
-    } catch {
-      toast.error("Failed to upload photos");
+      setPhotoUrls(uploadedUrls);
+
+      // Analyze with AI
+      const analyzeRes = await fetch("/api/supply/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageUrls: uploadedUrls }),
+      });
+
+      if (!analyzeRes.ok) {
+        throw new Error("Failed to analyze");
+      }
+
+      const analysisData = await analyzeRes.json();
+      setAnalysis(analysisData);
+      toast.success("Photo analyzed successfully");
+    } catch (error) {
+      console.error("Upload/analyze error:", error);
+      toast.error("Failed to analyze photo");
     } finally {
-      setIsUploading(false);
+      setIsAnalyzing(false);
+    }
+  };
+
+  const analyzeFromUrl = async () => {
+    if (!productUrl.trim()) {
+      toast.error("Please enter a product URL");
+      return;
+    }
+
+    setIsAnalyzing(true);
+    try {
+      const res = await fetch("/api/supply/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productUrl: productUrl.trim() }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to analyze");
+      }
+
+      const data = await res.json() as KitAnalysisResult;
+
+      if (data.isKit && data.items.length > 1) {
+        // It's a kit with multiple items
+        setKitAnalysis(data);
+        // Select all items by default
+        setSelectedKitItems(new Set(data.items.map((_, i) => i)));
+        toast.success(`Found ${data.items.length} items in kit`);
+      } else {
+        // Single item
+        setAnalysis(data.items[0]);
+        updateField("reorderUrl", productUrl.trim());
+        toast.success("Product info extracted");
+      }
+    } catch (error) {
+      console.error("URL analyze error:", error);
+      toast.error("Failed to extract product info from URL");
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -149,12 +248,12 @@ export function AddSupplyForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name.trim()) {
+    if (!currentData.name.trim()) {
       toast.error("Please enter a name");
       return;
     }
 
-    if (!formData.category) {
+    if (!currentData.category) {
       toast.error("Please select a category");
       return;
     }
@@ -163,23 +262,23 @@ export function AddSupplyForm() {
     try {
       await createCareSupply({
         photoUrls,
-        name: formData.name.trim(),
-        category: formData.category,
-        subcategory: formData.subcategory || undefined,
-        brand: formData.brand || undefined,
-        color: formData.color || undefined,
-        size: formData.size || undefined,
-        compatibleColors: formData.compatibleColors,
-        compatibleMaterials: formData.compatibleMaterials,
-        status: formData.status,
-        quantity: formData.quantity,
-        quantityUnit: formData.quantityUnit,
+        name: currentData.name.trim(),
+        category: currentData.category,
+        subcategory: currentData.subcategory || undefined,
+        brand: currentData.brand || undefined,
+        color: currentData.color || undefined,
+        size: currentData.size || undefined,
+        compatibleColors: currentData.compatibleColors,
+        compatibleMaterials: currentData.compatibleMaterials,
+        status: currentData.status,
+        quantity: currentData.quantity,
+        quantityUnit: currentData.quantityUnit,
         reorderThreshold: formData.reorderThreshold,
         purchaseSource: formData.purchaseSource || undefined,
-        purchasePrice: formData.purchasePrice,
-        reorderUrl: formData.reorderUrl || undefined,
+        purchasePrice: currentData.purchasePrice,
+        reorderUrl: currentData.reorderUrl || undefined,
         rating: formData.rating,
-        notes: formData.notes || undefined,
+        notes: currentData.notes || undefined,
       });
 
       toast.success("Supply added successfully");
@@ -191,402 +290,631 @@ export function AddSupplyForm() {
     }
   };
 
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Photo Upload */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Photos</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            className={cn(
-              "border-2 border-dashed rounded-lg p-8 text-center transition-colors",
-              isDragging
-                ? "border-primary bg-primary/5"
-                : "border-muted-foreground/25 hover:border-muted-foreground/50",
-              photoUrls.length >= 5 && "opacity-50 pointer-events-none"
-            )}
-          >
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleFileSelect}
-              className="hidden"
-              id="photo-upload"
-              disabled={photoUrls.length >= 5 || isUploading}
-            />
-            <label
-              htmlFor="photo-upload"
-              className="cursor-pointer flex flex-col items-center"
-            >
-              <svg
-                className="h-12 w-12 text-muted-foreground mb-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
-                />
-              </svg>
-              <p className="text-sm font-medium">
-                {isUploading ? "Uploading..." : "Drag and drop photos here, or click to browse"}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Upload up to 5 photos (JPG, PNG, WEBP)
-              </p>
-            </label>
-          </div>
+  const resetForm = () => {
+    setAnalysis(null);
+    setKitAnalysis(null);
+    setSelectedKitItems(new Set());
+    setPhotoUrls([]);
+    setProductUrl("");
+    setFormData({
+      name: "",
+      category: "",
+      subcategory: "",
+      brand: "",
+      color: "",
+      size: "",
+      compatibleColors: [],
+      compatibleMaterials: [],
+      status: "IN_STOCK",
+      quantity: 1,
+      quantityUnit: "each",
+      reorderThreshold: undefined,
+      purchaseSource: "",
+      purchasePrice: undefined,
+      reorderUrl: "",
+      rating: undefined,
+      notes: "",
+    });
+  };
 
-          {photoUrls.length > 0 && (
-            <div className="grid grid-cols-4 gap-3 mt-4">
-              {photoUrls.map((url, index) => (
-                <div key={url} className="relative aspect-square group">
-                  <img
-                    src={url}
-                    alt={`Photo ${index + 1}`}
-                    className="h-full w-full object-cover rounded-lg"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removePhoto(index)}
-                    className="absolute top-1 right-1 p-1 rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"
+  // Handle adding all selected kit items
+  const handleAddKitItems = async () => {
+    if (!kitAnalysis || selectedKitItems.size === 0) return;
+
+    setAddingKitItems(true);
+    let successCount = 0;
+
+    try {
+      for (const index of selectedKitItems) {
+        const item = kitAnalysis.items[index];
+        await createCareSupply({
+          photoUrls: [],
+          name: item.name,
+          category: item.category,
+          subcategory: item.subcategory || undefined,
+          brand: item.brand || undefined,
+          color: item.color || undefined,
+          size: item.size || undefined,
+          compatibleColors: item.compatibleColors,
+          compatibleMaterials: item.compatibleMaterials,
+          reorderUrl: item.reorderUrl || undefined,
+          notes: item.notes || undefined,
+        });
+        successCount++;
+      }
+
+      toast.success(`Added ${successCount} supplies from kit`);
+      router.push("/shoe-care");
+    } catch {
+      toast.error(`Added ${successCount} items, but some failed`);
+    } finally {
+      setAddingKitItems(false);
+    }
+  };
+
+  const toggleKitItem = (index: number) => {
+    setSelectedKitItems((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
+  };
+
+  // Show kit items selection
+  if (kitAnalysis) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Badge variant="secondary">Kit Detected</Badge>
+              {kitAnalysis.kitName}
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              This kit contains {kitAnalysis.items.length} items. Select which ones to add to your inventory.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex gap-2 mb-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedKitItems(new Set(kitAnalysis.items.map((_, i) => i)))}
+              >
+                Select All
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedKitItems(new Set())}
+              >
+                Deselect All
+              </Button>
+            </div>
+
+            {kitAnalysis.items.map((item, index) => (
+              <div
+                key={index}
+                className={cn(
+                  "flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors",
+                  selectedKitItems.has(index)
+                    ? "border-primary bg-primary/5"
+                    : "hover:bg-muted/50"
+                )}
+                onClick={() => toggleKitItem(index)}
+              >
+                <div className="pt-0.5">
+                  <div
+                    className={cn(
+                      "w-5 h-5 rounded border-2 flex items-center justify-center",
+                      selectedKitItems.has(index)
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-muted-foreground/30"
+                    )}
                   >
-                    <svg
-                      className="h-4 w-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={2}
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
+                    {selectedKitItems.has(index) && (
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                      </svg>
+                    )}
+                  </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm">{item.name}</p>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    <Badge variant="outline" className="text-xs">
+                      {SUPPLY_CATEGORIES.find((c) => c.value === item.category)?.label || item.category}
+                    </Badge>
+                    {item.color && (
+                      <Badge variant="secondary" className="text-xs">
+                        {item.color}
+                      </Badge>
+                    )}
+                    {item.brand && (
+                      <Badge variant="secondary" className="text-xs">
+                        {item.brand}
+                      </Badge>
+                    )}
+                  </div>
+                  {item.notes && (
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.notes}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
 
-      {/* Basic Info */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Basic Information</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => updateField("name", e.target.value)}
-                placeholder="e.g., Saphir Pate de Luxe"
-                required
-              />
-            </div>
+        <div className="flex gap-4">
+          <Button type="button" variant="outline" onClick={resetForm} className="flex-1">
+            Start Over
+          </Button>
+          <Button
+            onClick={handleAddKitItems}
+            disabled={addingKitItems || selectedKitItems.size === 0}
+            className="flex-1"
+          >
+            {addingKitItems
+              ? "Adding..."
+              : `Add ${selectedKitItems.size} Item${selectedKitItems.size !== 1 ? "s" : ""}`}
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
-            <div className="space-y-2">
-              <Label htmlFor="category">Category *</Label>
-              <Select
-                value={formData.category}
-                onValueChange={(v) => {
-                  updateField("category", v as SupplyCategoryValue);
-                  updateField("subcategory", "");
-                }}
-              >
-                <SelectTrigger id="category">
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {SUPPLY_CATEGORIES.map((cat) => (
-                    <SelectItem key={cat.value} value={cat.value}>
-                      {cat.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+  // Show analysis results form
+  if (analysis || mode === "manual") {
+    return (
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Photo Preview */}
+        {photoUrls.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Photos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-4 gap-3">
+                {photoUrls.map((url, index) => (
+                  <div key={url} className="relative aspect-square group">
+                    <img
+                      src={url}
+                      alt={`Photo ${index + 1}`}
+                      className="h-full w-full object-cover rounded-lg"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removePhoto(index)}
+                      className="absolute top-1 right-1 p-1 rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-            <div className="space-y-2">
-              <Label htmlFor="subcategory">Subcategory</Label>
-              <Select
-                value={formData.subcategory}
-                onValueChange={(v) => updateField("subcategory", v)}
-                disabled={subcategories.length === 0}
-              >
-                <SelectTrigger id="subcategory">
-                  <SelectValue placeholder="Select subcategory" />
-                </SelectTrigger>
-                <SelectContent>
-                  {subcategories.map((sub) => (
-                    <SelectItem key={sub} value={sub}>
-                      {sub}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="brand">Brand</Label>
-              <Select
-                value={formData.brand}
-                onValueChange={(v) => updateField("brand", v)}
-              >
-                <SelectTrigger id="brand">
-                  <SelectValue placeholder="Select brand" />
-                </SelectTrigger>
-                <SelectContent>
-                  {COMMON_BRANDS.map((brand) => (
-                    <SelectItem key={brand} value={brand}>
-                      {brand}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="color">Color</Label>
-              <Select
-                value={formData.color}
-                onValueChange={(v) => updateField("color", v)}
-              >
-                <SelectTrigger id="color">
-                  <SelectValue placeholder="Select color" />
-                </SelectTrigger>
-                <SelectContent>
-                  {POLISH_COLORS.map((color) => (
-                    <SelectItem key={color} value={color}>
-                      {color}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="size">Size</Label>
-              <Input
-                id="size"
-                value={formData.size}
-                onChange={(e) => updateField("size", e.target.value)}
-                placeholder="e.g., 75ml, Large"
-              />
-            </div>
+        {/* AI Analysis Badge */}
+        {analysis && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Badge variant="secondary">AI Analyzed</Badge>
+            <span>Review and adjust the detected attributes below</span>
           </div>
-        </CardContent>
-      </Card>
+        )}
 
-      {/* Inventory */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Inventory</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select
-                value={formData.status}
-                onValueChange={(v) => updateField("status", v)}
-              >
-                <SelectTrigger id="status">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {SUPPLY_STATUSES.map((status) => (
-                    <SelectItem key={status.value} value={status.value}>
-                      {status.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Quantity</Label>
-              <div className="flex gap-2">
+        {/* Basic Info */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Basic Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Name *</Label>
                 <Input
-                  type="number"
-                  min="0"
-                  value={formData.quantity}
-                  onChange={(e) => updateField("quantity", parseInt(e.target.value) || 0)}
-                  className="w-20"
+                  id="name"
+                  value={currentData.name}
+                  onChange={(e) => updateField("name", e.target.value)}
+                  placeholder="e.g., Saphir Pate de Luxe"
+                  required
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="category">Category *</Label>
                 <Select
-                  value={formData.quantityUnit}
-                  onValueChange={(v) => updateField("quantityUnit", v)}
+                  value={currentData.category}
+                  onValueChange={(v) => {
+                    updateField("category", v as SupplyCategoryValue);
+                    updateField("subcategory", "");
+                  }}
                 >
-                  <SelectTrigger className="flex-1">
-                    <SelectValue />
+                  <SelectTrigger id="category">
+                    <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {QUANTITY_UNITS.map((unit) => (
-                      <SelectItem key={unit} value={unit}>
-                        {unit}
+                    {SUPPLY_CATEGORIES.map((cat) => (
+                      <SelectItem key={cat.value} value={cat.value}>
+                        {cat.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="subcategory">Subcategory</Label>
+                <Select
+                  value={currentData.subcategory}
+                  onValueChange={(v) => updateField("subcategory", v)}
+                  disabled={subcategories.length === 0}
+                >
+                  <SelectTrigger id="subcategory">
+                    <SelectValue placeholder="Select subcategory" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {subcategories.map((sub) => (
+                      <SelectItem key={sub} value={sub}>
+                        {sub}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="brand">Brand</Label>
+                <Select
+                  value={currentData.brand}
+                  onValueChange={(v) => updateField("brand", v)}
+                >
+                  <SelectTrigger id="brand">
+                    <SelectValue placeholder="Select brand" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {COMMON_BRANDS.map((brand) => (
+                      <SelectItem key={brand} value={brand}>
+                        {brand}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="color">Color</Label>
+                <Select
+                  value={currentData.color}
+                  onValueChange={(v) => updateField("color", v)}
+                >
+                  <SelectTrigger id="color">
+                    <SelectValue placeholder="Select color" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {POLISH_COLORS.map((color) => (
+                      <SelectItem key={color} value={color}>
+                        {color}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="size">Size</Label>
+                <Input
+                  id="size"
+                  value={currentData.size}
+                  onChange={(e) => updateField("size", e.target.value)}
+                  placeholder="e.g., 75ml, Large"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Inventory */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Inventory & Purchase</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <Select
+                  value={currentData.status}
+                  onValueChange={(v) => updateField("status", v)}
+                >
+                  <SelectTrigger id="status">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SUPPLY_STATUSES.map((status) => (
+                      <SelectItem key={status.value} value={status.value}>
+                        {status.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Quantity</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    min="0"
+                    value={currentData.quantity}
+                    onChange={(e) => updateField("quantity", parseInt(e.target.value) || 0)}
+                    className="w-20"
+                  />
+                  <Select
+                    value={currentData.quantityUnit}
+                    onValueChange={(v) => updateField("quantityUnit", v)}
+                  >
+                    <SelectTrigger className="flex-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {QUANTITY_UNITS.map((unit) => (
+                        <SelectItem key={unit} value={unit}>
+                          {unit}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="purchasePrice">Purchase Price</Label>
+                <Input
+                  id="purchasePrice"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={currentData.purchasePrice || ""}
+                  onChange={(e) => updateField("purchasePrice", parseFloat(e.target.value) || undefined)}
+                  placeholder="0.00"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="rating">Rating</Label>
+                <Select
+                  value={formData.rating?.toString() || ""}
+                  onValueChange={(v) => updateField("rating", v ? parseInt(v) : undefined)}
+                >
+                  <SelectTrigger id="rating">
+                    <SelectValue placeholder="Rate this product" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5 - Excellent</SelectItem>
+                    <SelectItem value="4">4 - Good</SelectItem>
+                    <SelectItem value="3">3 - Average</SelectItem>
+                    <SelectItem value="2">2 - Poor</SelectItem>
+                    <SelectItem value="1">1 - Would not recommend</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2 col-span-2">
+                <Label htmlFor="reorderUrl">Reorder URL</Label>
+                <Input
+                  id="reorderUrl"
+                  type="url"
+                  value={currentData.reorderUrl}
+                  onChange={(e) => updateField("reorderUrl", e.target.value)}
+                  placeholder="https://amazon.com/..."
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Compatibility */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Compatibility</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Compatible Colors (for matching to shoes)</Label>
+              <div className="flex flex-wrap gap-2">
+                {POLISH_COLORS.map((color) => (
+                  <Badge
+                    key={color}
+                    variant={currentData.compatibleColors.includes(color) ? "default" : "outline"}
+                    className="cursor-pointer"
+                    onClick={() => toggleCompatibleColor(color)}
+                  >
+                    {color}
+                  </Badge>
+                ))}
+              </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="reorderThreshold">Reorder Threshold</Label>
-              <Input
-                id="reorderThreshold"
-                type="number"
-                min="0"
-                value={formData.reorderThreshold || ""}
-                onChange={(e) =>
-                  updateField("reorderThreshold", parseInt(e.target.value) || undefined)
-                }
-                placeholder="Alert when below this"
-              />
+              <Label>Compatible Materials</Label>
+              <div className="flex flex-wrap gap-2">
+                {COMPATIBLE_MATERIALS.map((material) => (
+                  <Badge
+                    key={material}
+                    variant={currentData.compatibleMaterials.includes(material) ? "default" : "outline"}
+                    className="cursor-pointer"
+                    onClick={() => toggleCompatibleMaterial(material)}
+                  >
+                    {material}
+                  </Badge>
+                ))}
+              </div>
             </div>
+          </CardContent>
+        </Card>
 
-            <div className="space-y-2">
-              <Label htmlFor="purchaseSource">Purchase Source</Label>
-              <Input
-                id="purchaseSource"
-                value={formData.purchaseSource}
-                onChange={(e) => updateField("purchaseSource", e.target.value)}
-                placeholder="Where to buy / reorder URL"
-              />
-            </div>
+        {/* Notes */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Notes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Textarea
+              value={currentData.notes}
+              onChange={(e) => updateField("notes", e.target.value)}
+              rows={3}
+              placeholder="Any additional notes..."
+            />
+          </CardContent>
+        </Card>
 
-            <div className="space-y-2">
-              <Label htmlFor="purchasePrice">Purchase Price</Label>
-              <Input
-                id="purchasePrice"
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.purchasePrice || ""}
-                onChange={(e) =>
-                  updateField("purchasePrice", parseFloat(e.target.value) || undefined)
-                }
-                placeholder="0.00"
-              />
-            </div>
+        {/* Submit */}
+        <div className="flex gap-4">
+          <Button type="button" variant="outline" onClick={resetForm} className="flex-1">
+            Start Over
+          </Button>
+          <Button type="submit" disabled={isSubmitting} className="flex-1">
+            {isSubmitting ? "Adding..." : "Add Supply"}
+          </Button>
+        </div>
+      </form>
+    );
+  }
 
-            <div className="space-y-2 col-span-2">
-              <Label htmlFor="reorderUrl">Reorder URL</Label>
-              <Input
-                id="reorderUrl"
-                type="url"
-                value={formData.reorderUrl}
-                onChange={(e) => updateField("reorderUrl", e.target.value)}
-                placeholder="https://example.com/product"
-              />
-            </div>
+  // Initial mode selection
+  return (
+    <div className="space-y-6">
+      <Tabs value={mode} onValueChange={(v) => setMode(v as typeof mode)}>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="photo">Upload Photo</TabsTrigger>
+          <TabsTrigger value="url">Product URL</TabsTrigger>
+          <TabsTrigger value="manual">Manual Entry</TabsTrigger>
+        </TabsList>
 
-            <div className="space-y-2">
-              <Label htmlFor="rating">Rating</Label>
-              <Select
-                value={formData.rating?.toString() || ""}
-                onValueChange={(v) => updateField("rating", v ? parseInt(v) : undefined)}
+        <TabsContent value="photo" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Upload Product Photo</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Take a photo of your shoe care product and AI will identify it
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={cn(
+                  "border-2 border-dashed rounded-lg p-12 text-center transition-colors",
+                  isDragging
+                    ? "border-primary bg-primary/5"
+                    : "border-muted-foreground/25 hover:border-muted-foreground/50",
+                  isAnalyzing && "opacity-50 pointer-events-none"
+                )}
               >
-                <SelectTrigger id="rating">
-                  <SelectValue placeholder="Rate this product" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="5">5 - Excellent</SelectItem>
-                  <SelectItem value="4">4 - Good</SelectItem>
-                  <SelectItem value="3">3 - Average</SelectItem>
-                  <SelectItem value="2">2 - Poor</SelectItem>
-                  <SelectItem value="1">1 - Would not recommend</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  id="photo-upload"
+                  disabled={isAnalyzing}
+                />
+                <label htmlFor="photo-upload" className="cursor-pointer flex flex-col items-center">
+                  {isAnalyzing ? (
+                    <>
+                      <svg className="animate-spin h-12 w-12 text-primary mb-4" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      <p className="text-sm font-medium">Analyzing with AI...</p>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="h-12 w-12 text-muted-foreground mb-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+                      </svg>
+                      <p className="text-sm font-medium">Drag and drop a photo, or click to browse</p>
+                      <p className="text-xs text-muted-foreground mt-1">AI will identify the product automatically</p>
+                    </>
+                  )}
+                </label>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      {/* Compatibility */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Compatibility (for matching to shoes)</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>Compatible Colors</Label>
-            <div className="flex flex-wrap gap-2">
-              {POLISH_COLORS.map((color) => (
-                <Badge
-                  key={color}
-                  variant={formData.compatibleColors.includes(color) ? "default" : "outline"}
-                  className="cursor-pointer"
-                  onClick={() => toggleCompatibleColor(color)}
-                >
-                  {color}
-                </Badge>
-              ))}
-            </div>
-          </div>
+        <TabsContent value="url" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Enter Product URL</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Paste an Amazon or retailer link and AI will extract the product info
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-2">
+                <Input
+                  type="url"
+                  value={productUrl}
+                  onChange={(e) => setProductUrl(e.target.value)}
+                  placeholder="https://amazon.com/dp/..."
+                  className="flex-1"
+                  disabled={isAnalyzing}
+                />
+                <Button onClick={analyzeFromUrl} disabled={isAnalyzing || !productUrl.trim()}>
+                  {isAnalyzing ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Analyzing...
+                    </>
+                  ) : (
+                    "Extract Info"
+                  )}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Works best with Amazon, but supports most retailer product pages
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-          <div className="space-y-2">
-            <Label>Compatible Materials</Label>
-            <div className="flex flex-wrap gap-2">
-              {COMPATIBLE_MATERIALS.map((material) => (
-                <Badge
-                  key={material}
-                  variant={formData.compatibleMaterials.includes(material) ? "default" : "outline"}
-                  className="cursor-pointer"
-                  onClick={() => toggleCompatibleMaterial(material)}
-                >
-                  {material}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        <TabsContent value="manual" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Manual Entry</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Enter product details manually without AI assistance
+              </p>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={() => setMode("manual")} className="w-full">
+                Continue to Form
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
-      {/* Notes */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Notes</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Textarea
-            value={formData.notes}
-            onChange={(e) => updateField("notes", e.target.value)}
-            rows={3}
-            placeholder="Any additional notes about this supply..."
-          />
-        </CardContent>
-      </Card>
-
-      {/* Submit */}
-      <div className="flex gap-4">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => router.push("/shoe-care")}
-          className="flex-1"
-        >
+      <div className="flex justify-center">
+        <Button variant="ghost" onClick={() => router.push("/shoe-care")}>
           Cancel
         </Button>
-        <Button type="submit" disabled={isSubmitting} className="flex-1">
-          {isSubmitting ? "Adding..." : "Add Supply"}
-        </Button>
       </div>
-    </form>
+    </div>
   );
 }

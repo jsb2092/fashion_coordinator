@@ -281,6 +281,229 @@ ${JSON.stringify(recentOutfits.slice(0, 5), null, 2)}
   return JSON.parse(jsonMatch[0]) as OutfitSuggestion;
 }
 
+// Shoe Care Supply Analysis
+export const SUPPLY_CATEGORIES = [
+  "POLISH",
+  "BRUSH",
+  "TREE",
+  "CLEANER",
+  "PROTECTION",
+  "TOOL",
+  "LACES",
+  "OTHER",
+] as const;
+
+export type SupplyCategory = (typeof SUPPLY_CATEGORIES)[number];
+
+export interface SupplyAnalysis {
+  name: string;
+  category: SupplyCategory;
+  subcategory: string | null;
+  brand: string | null;
+  color: string | null;
+  size: string | null;
+  compatibleColors: string[];
+  compatibleMaterials: string[];
+  notes: string | null;
+  estimatedPrice: number | null;
+  reorderUrl: string | null;
+}
+
+export async function analyzeSupplyImage(
+  images: ImageInput | ImageInput[]
+): Promise<SupplyAnalysis> {
+  const imageArray = Array.isArray(images) ? images : [images];
+
+  type MediaType = "image/jpeg" | "image/png" | "image/gif" | "image/webp";
+  const content: Array<
+    | { type: "image"; source: { type: "base64"; media_type: MediaType; data: string } }
+    | { type: "text"; text: string }
+  > = [];
+
+  for (const img of imageArray) {
+    content.push({
+      type: "image" as const,
+      source: { type: "base64" as const, media_type: img.mediaType, data: img.base64 },
+    });
+  }
+
+  const multiImageNote = imageArray.length > 1
+    ? "Multiple images are provided. Use ALL images to gather complete information.\n\n"
+    : "";
+
+  content.push({
+    type: "text",
+    text: `${multiImageNote}Analyze this shoe care product/supply and provide structured data in JSON format.
+
+Categories: POLISH (cream polish, wax polish, liquid polish, edge dressing, renovateur), BRUSH (horsehair brush, dauber brush, suede brush, shine brush, welt brush), TREE (cedar shoe tree, plastic shoe tree, boot tree), CLEANER (saddle soap, leather cleaner, suede cleaner), PROTECTION (water repellent, leather conditioner, suede protector, mink oil), TOOL (shoe horn, polishing cloth, edge burnisher), LACES (dress laces, round laces, flat laces, waxed laces), OTHER
+
+Polish/cream colors: Black, Burgundy, Dark Brown, Medium Brown, Light Brown, Tan, Cognac, Navy, Neutral, Oxblood, Cordovan, Walnut, Mahogany
+
+Compatible materials: Smooth leather, Full-grain leather, Corrected-grain leather, Patent leather, Suede, Nubuck, Shell cordovan, Exotic leather, Canvas, Synthetic, Rubber
+
+Common brands: Allen Edmonds, Angelus, Bickmore, Boot Black, Collonil, Fiebing's, FootFitter, Kiwi, Lincoln, Meltonian, Moneysworth & Best, Saphir, Tarrago, Venetian, Woodlore
+
+Return a JSON object with these fields:
+- name: product name (e.g., "Saphir Pate de Luxe Wax Polish")
+- category: from categories list above
+- subcategory: specific type (e.g., "wax polish", "horsehair brush", "cedar shoe tree")
+- brand: READ FROM LABEL if visible, otherwise guess from style
+- color: for polish/cream products, the color (from polish colors list); null for brushes/tools
+- size: product size if visible (e.g., "75ml", "50g", "Large")
+- compatibleColors: array of shoe colors this product works with (for polishes/creams)
+- compatibleMaterials: array of materials this product works with
+- notes: any relevant product details or usage tips
+- estimatedPrice: rough price estimate in USD if recognizable product, null otherwise
+- reorderUrl: null (will be filled in separately)`,
+  });
+
+  const response = await anthropic.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 1024,
+    messages: [{ role: "user", content }],
+  });
+
+  const text = response.content[0].type === "text" ? response.content[0].text : "";
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    throw new Error("Failed to parse Claude response as JSON");
+  }
+
+  return JSON.parse(jsonMatch[0]) as SupplyAnalysis;
+}
+
+export async function analyzeSupplyFromUrl(url: string): Promise<SupplyAnalysis> {
+  const response = await anthropic.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 1024,
+    messages: [
+      {
+        role: "user",
+        content: `Extract shoe care product information from this URL: ${url}
+
+This is likely an Amazon or retailer product page. Based on the URL and any product identifiers in it, identify what shoe care product this is.
+
+Categories: POLISH, BRUSH, TREE, CLEANER, PROTECTION, TOOL, LACES, OTHER
+
+Polish/cream colors: Black, Burgundy, Dark Brown, Medium Brown, Light Brown, Tan, Cognac, Navy, Neutral, Oxblood, Cordovan, Walnut, Mahogany
+
+Compatible materials: Smooth leather, Full-grain leather, Corrected-grain leather, Patent leather, Suede, Nubuck, Shell cordovan, Exotic leather, Canvas, Synthetic, Rubber
+
+Common shoe care brands: Allen Edmonds, Angelus, Bickmore, Boot Black, Collonil, Fiebing's, FootFitter, Kiwi, Lincoln, Meltonian, Moneysworth & Best, Saphir, Tarrago, Venetian, Woodlore
+
+Return a JSON object with:
+- name: product name
+- category: from categories list
+- subcategory: specific type
+- brand: brand name
+- color: for polish/cream products (null for brushes/tools)
+- size: product size if determinable
+- compatibleColors: array of shoe colors this works with
+- compatibleMaterials: array of compatible materials
+- notes: product details or usage tips
+- estimatedPrice: null
+- reorderUrl: the original URL provided`,
+      },
+    ],
+  });
+
+  const text = response.content[0].type === "text" ? response.content[0].text : "";
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    throw new Error("Failed to parse Claude response as JSON");
+  }
+
+  const result = JSON.parse(jsonMatch[0]) as SupplyAnalysis;
+  // Ensure reorderUrl is set
+  result.reorderUrl = url;
+  return result;
+}
+
+// For analyzing kits that contain multiple items
+export interface KitAnalysisResult {
+  isKit: boolean;
+  kitName: string | null;
+  items: SupplyAnalysis[];
+}
+
+export async function analyzeSupplyKitFromUrl(url: string): Promise<KitAnalysisResult> {
+  const response = await anthropic.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 4096,
+    messages: [
+      {
+        role: "user",
+        content: `Analyze this shoe care product URL: ${url}
+
+Determine if this is a SINGLE PRODUCT or a KIT containing multiple items.
+
+If it's a KIT (like "FootFitter Complete Shoe Care Kit" or "Saphir Medaille d'Or Starter Set"):
+- Set isKit: true
+- Set kitName to the kit's name
+- List EACH individual item in the kit separately in the items array
+
+If it's a SINGLE PRODUCT:
+- Set isKit: false
+- Set kitName: null
+- Put the single product in the items array
+
+Categories: POLISH, BRUSH, TREE, CLEANER, PROTECTION, TOOL, LACES, OTHER
+
+Polish/cream colors: Black, Burgundy, Dark Brown, Medium Brown, Light Brown, Tan, Cognac, Navy, Neutral, Oxblood, Cordovan, Walnut, Mahogany
+
+Compatible materials: Smooth leather, Full-grain leather, Corrected-grain leather, Patent leather, Suede, Nubuck, Shell cordovan, Exotic leather, Canvas, Synthetic, Rubber
+
+Common shoe care brands: Allen Edmonds, Angelus, Bickmore, Boot Black, Collonil, Fiebing's, FootFitter, Kiwi, Lincoln, Meltonian, Moneysworth & Best, Saphir, Tarrago, Venetian, Woodlore
+
+Return a JSON object with:
+{
+  "isKit": boolean,
+  "kitName": string or null,
+  "items": [
+    {
+      "name": "Individual item name (e.g., 'FootFitter Black Cream Polish')",
+      "category": "POLISH" | "BRUSH" | "TREE" | etc.,
+      "subcategory": "specific type",
+      "brand": "brand name",
+      "color": "for polish/cream" or null,
+      "size": "size if known" or null,
+      "compatibleColors": ["array", "of", "colors"],
+      "compatibleMaterials": ["array", "of", "materials"],
+      "notes": "usage tips for this specific item",
+      "estimatedPrice": null,
+      "reorderUrl": null
+    }
+  ]
+}
+
+For kits, list ALL items - for example a "Complete Kit" might include:
+- Multiple cream polishes in different colors (Black, Dark Brown, Neutral, etc.)
+- Horsehair brushes (separate entries for light/dark)
+- Dauber brushes
+- Microfiber cloths
+- Shoe horn
+etc.`,
+      },
+    ],
+  });
+
+  const text = response.content[0].type === "text" ? response.content[0].text : "";
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    throw new Error("Failed to parse Claude response as JSON");
+  }
+
+  const result = JSON.parse(jsonMatch[0]) as KitAnalysisResult;
+
+  // Set reorderUrl on all items
+  result.items = result.items.map(item => ({
+    ...item,
+    reorderUrl: url,
+  }));
+
+  return result;
+}
+
 export async function* streamChat(
   messages: Array<{ role: "user" | "assistant"; content: string }>,
   wardrobeContext: string
