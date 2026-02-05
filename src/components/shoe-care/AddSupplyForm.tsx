@@ -158,9 +158,6 @@ export function AddSupplyForm() {
   };
 
   const uploadAndAnalyze = async (files: File[]) => {
-    console.log("uploadAndAnalyze called");
-    console.log("kitDescription value:", JSON.stringify(kitDescription));
-    console.log("kitDescription.trim():", JSON.stringify(kitDescription.trim()));
     setIsAnalyzing(true);
     try {
       // Upload files first
@@ -201,7 +198,6 @@ export function AddSupplyForm() {
         }
 
         const data = await analyzeRes.json() as KitAnalysisResult;
-        console.log("Kit analysis response:", JSON.stringify(data, null, 2));
 
         if (data.items && data.items.length > 0) {
           // Always show kit UI if we have items from kit description
@@ -392,7 +388,7 @@ export function AddSupplyForm() {
           : "OTHER";
         try {
           await createCareSupply({
-            photoUrls: [], // Individual items don't need the kit photo
+            photoUrls: photoUrls, // Share kit photo with all items
             name: item.name,
             category: category,
             subcategory: item.subcategory || undefined,
