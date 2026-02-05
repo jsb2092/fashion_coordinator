@@ -158,6 +158,9 @@ export function AddSupplyForm() {
   };
 
   const uploadAndAnalyze = async (files: File[]) => {
+    console.log("uploadAndAnalyze called");
+    console.log("kitDescription value:", JSON.stringify(kitDescription));
+    console.log("kitDescription.trim():", JSON.stringify(kitDescription.trim()));
     setIsAnalyzing(true);
     try {
       // Upload files first
