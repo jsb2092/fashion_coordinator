@@ -4,6 +4,7 @@ export const SUPPLY_CATEGORIES = [
   { value: "TREE", label: "Shoe Tree" },
   { value: "CLEANER", label: "Cleaner" },
   { value: "PROTECTION", label: "Protection" },
+  { value: "CLOTH", label: "Cloth" },
   { value: "TOOL", label: "Tool" },
   { value: "LACES", label: "Laces" },
   { value: "OTHER", label: "Other" },
@@ -17,7 +18,8 @@ export const SUPPLY_SUBCATEGORIES: Record<SupplyCategoryValue, string[]> = {
   TREE: ["Cedar shoe tree", "Plastic shoe tree", "Boot tree", "Travel shoe tree"],
   CLEANER: ["Saddle soap", "Leather cleaner", "Suede cleaner", "Sneaker cleaner"],
   PROTECTION: ["Water repellent", "Leather conditioner", "Suede protector", "Mink oil"],
-  TOOL: ["Shoe horn", "Polishing cloth", "Edge burnisher", "Heel grips", "Tongue pads"],
+  CLOTH: ["Polishing cloth", "Microfiber cloth", "Chamois", "Application cloth", "Buffing cloth"],
+  TOOL: ["Shoe horn", "Edge burnisher", "Heel grips", "Tongue pads"],
   LACES: ["Dress laces", "Round laces", "Flat laces", "Waxed laces", "Elastic laces"],
   OTHER: ["Storage bag", "Shoe rack", "Boot stand", "Cedar balls"],
 };

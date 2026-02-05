@@ -55,6 +55,7 @@ enum SupplyCategory {
   TREE
   CLEANER
   PROTECTION
+  CLOTH
   TOOL
   LACES
   OTHER

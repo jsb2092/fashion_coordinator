@@ -288,6 +288,7 @@ export const SUPPLY_CATEGORIES = [
   "TREE",
   "CLEANER",
   "PROTECTION",
+  "CLOTH",
   "TOOL",
   "LACES",
   "OTHER",
@@ -335,7 +336,7 @@ export async function analyzeSupplyImage(
     type: "text",
     text: `${multiImageNote}Analyze this shoe care product/supply and provide structured data in JSON format.
 
-Categories: POLISH (cream polish, wax polish, liquid polish, edge dressing, renovateur), BRUSH (horsehair brush, dauber brush, suede brush, shine brush, welt brush), TREE (cedar shoe tree, plastic shoe tree, boot tree), CLEANER (saddle soap, leather cleaner, suede cleaner), PROTECTION (water repellent, leather conditioner, suede protector, mink oil), TOOL (shoe horn, polishing cloth, edge burnisher), LACES (dress laces, round laces, flat laces, waxed laces), OTHER
+Categories: POLISH (cream polish, wax polish, liquid polish, edge dressing, renovateur), BRUSH (horsehair brush, dauber brush, suede brush, shine brush, welt brush), TREE (cedar shoe tree, plastic shoe tree, boot tree), CLEANER (saddle soap, leather cleaner, suede cleaner), PROTECTION (water repellent, leather conditioner, suede protector, mink oil), CLOTH (polishing cloth, microfiber cloth, chamois, application cloth, buffing cloth), TOOL (shoe horn, edge burnisher, heel grips, tongue pads), LACES (dress laces, round laces, flat laces, waxed laces), OTHER
 
 Polish/cream colors: Black, Burgundy, Dark Brown, Medium Brown, Light Brown, Tan, Cognac, Navy, Neutral, Oxblood, Cordovan, Walnut, Mahogany
 
@@ -383,7 +384,7 @@ export async function analyzeSupplyFromUrl(url: string): Promise<SupplyAnalysis>
 
 This is likely an Amazon or retailer product page. Based on the URL and any product identifiers in it, identify what shoe care product this is.
 
-Categories: POLISH, BRUSH, TREE, CLEANER, PROTECTION, TOOL, LACES, OTHER
+Categories: POLISH, BRUSH, TREE, CLEANER, PROTECTION, CLOTH, TOOL, LACES, OTHER
 
 Polish/cream colors: Black, Burgundy, Dark Brown, Medium Brown, Light Brown, Tan, Cognac, Navy, Neutral, Oxblood, Cordovan, Walnut, Mahogany
 
@@ -451,7 +452,7 @@ If it's a SINGLE PRODUCT:
 - Set kitName: null
 - Put the single product in the items array
 
-Categories: POLISH, BRUSH, TREE, CLEANER, PROTECTION, TOOL, LACES, OTHER
+Categories: POLISH, BRUSH, TREE, CLEANER, PROTECTION, CLOTH, TOOL, LACES, OTHER
 
 Polish/cream colors: Black, Burgundy, Dark Brown, Medium Brown, Light Brown, Tan, Cognac, Navy, Neutral, Oxblood, Cordovan, Walnut, Mahogany
 
