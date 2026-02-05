@@ -508,6 +508,118 @@ etc.`,
   return result;
 }
 
+// Generate personalized shoe care instructions
+export interface ShoeForCare {
+  category: string;
+  subcategory?: string | null;
+  colorPrimary: string;
+  colorSecondary?: string | null;
+  material?: string | null;
+  brand?: string | null;
+}
+
+export interface SupplyForCare {
+  name: string;
+  category: string;
+  subcategory?: string | null;
+  brand?: string | null;
+  color?: string | null;
+  compatibleColors: string[];
+  compatibleMaterials: string[];
+}
+
+export interface CareInstructions {
+  title: string;
+  suppliesNeeded: {
+    name: string;
+    purpose: string;
+    owned: boolean;
+  }[];
+  steps: {
+    step: number;
+    title: string;
+    description: string;
+    supplyUsed?: string;
+    duration?: string;
+    tips?: string;
+  }[];
+  frequency: string;
+  warnings?: string[];
+  quickMaintenanceTips: string[];
+}
+
+export async function generateCareInstructions(
+  shoe: ShoeForCare,
+  availableSupplies: SupplyForCare[],
+  careType: "full_polish" | "quick_clean" | "deep_condition" = "full_polish"
+): Promise<CareInstructions> {
+  const careTypeDescriptions = {
+    full_polish: "Full polish and shine (monthly or every 4-6 wears)",
+    quick_clean: "Quick maintenance clean (after each wear or weekly)",
+    deep_condition: "Deep conditioning treatment (every 3-4 months or after getting wet)",
+  };
+
+  const response = await anthropic.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 2048,
+    messages: [
+      {
+        role: "user",
+        content: `Generate personalized shoe care instructions for this shoe using the owner's available supplies.
+
+SHOE:
+- Type: ${shoe.category}${shoe.subcategory ? ` (${shoe.subcategory})` : ""}
+- Color: ${shoe.colorPrimary}${shoe.colorSecondary ? ` / ${shoe.colorSecondary}` : ""}
+- Material: ${shoe.material || "leather (assumed)"}
+- Brand: ${shoe.brand || "Unknown"}
+
+AVAILABLE SUPPLIES:
+${availableSupplies.map(s => `- ${s.name} (${s.category}${s.color ? `, ${s.color}` : ""})`).join("\n")}
+
+CARE TYPE REQUESTED: ${careTypeDescriptions[careType]}
+
+Based on the shoe color (${shoe.colorPrimary}), recommend the best matching cream/polish from their supplies. For example:
+- Black shoes → Black cream
+- Cognac/Tan shoes → Light Brown cream
+- Dark brown shoes → Dark Brown cream
+- Oxblood/Burgundy → Dark Brown or Burgundy cream
+- If no exact match, Neutral is safe for any color
+
+Return a JSON object with:
+{
+  "title": "Care instructions title (e.g., 'Full Polish for Cognac Leather Oxfords')",
+  "suppliesNeeded": [
+    {"name": "specific supply from their list or generic if they don't have it", "purpose": "what it's used for", "owned": true/false}
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "title": "Step title",
+      "description": "Detailed instructions",
+      "supplyUsed": "which supply to use (from their supplies)",
+      "duration": "how long (e.g., '5 minutes')",
+      "tips": "pro tips for this step"
+    }
+  ],
+  "frequency": "How often to do this type of care",
+  "warnings": ["Any warnings specific to this shoe type/color"],
+  "quickMaintenanceTips": ["Tips for between full polishes"]
+}
+
+Use their ACTUAL supply names in the instructions. If they're missing something important, include it with owned: false.`,
+      },
+    ],
+  });
+
+  const text = response.content[0].type === "text" ? response.content[0].text : "";
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    throw new Error("Failed to parse care instructions");
+  }
+
+  return JSON.parse(jsonMatch[0]) as CareInstructions;
+}
+
 export async function* streamChat(
   messages: Array<{ role: "user" | "assistant"; content: string }>,
   wardrobeContext: string
