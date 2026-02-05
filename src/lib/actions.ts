@@ -446,6 +446,8 @@ export async function getCareSupplies(filters?: {
           wardrobeItem: true,
         },
       },
+      parentKit: true,
+      kitItems: true,
     },
   });
 }
@@ -464,6 +466,8 @@ export async function getCareSupply(id: string) {
           wardrobeItem: true,
         },
       },
+      parentKit: true,
+      kitItems: true,
     },
   });
 }
@@ -488,6 +492,7 @@ export async function createCareSupply(data: {
   reorderUrl?: string;
   rating?: number;
   notes?: string;
+  parentKitId?: string;
 }) {
   const person = await getOrCreatePerson();
 
@@ -513,6 +518,7 @@ export async function createCareSupply(data: {
       reorderUrl: data.reorderUrl,
       rating: data.rating,
       notes: data.notes,
+      parentKitId: data.parentKitId,
     },
   });
 

@@ -278,6 +278,11 @@ model CareSupply {
   timesUsed           Int            @default(0)
   notes               String?
 
+  // Kit relationship - items can belong to a parent kit
+  parentKitId         String?
+  parentKit           CareSupply?    @relation("KitItems", fields: [parentKitId], references: [id], onDelete: SetNull)
+  kitItems            CareSupply[]   @relation("KitItems")
+
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
 
@@ -286,6 +291,7 @@ model CareSupply {
   @@index([personId])
   @@index([category])
   @@index([status])
+  @@index([parentKitId])
 }
 
 model ShoeSupplyLink {

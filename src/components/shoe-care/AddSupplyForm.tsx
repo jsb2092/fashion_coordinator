@@ -356,10 +356,23 @@ export function AddSupplyForm() {
     let successCount = 0;
 
     try {
+      // First, create the parent kit
+      const kitReorderUrl = productUrl.trim() || kitAnalysis.items[0]?.reorderUrl || undefined;
+      const parentKit = await createCareSupply({
+        photoUrls: photoUrls,
+        name: kitAnalysis.kitName || "Shoe Care Kit",
+        category: "KIT",
+        subcategory: "Complete care kit",
+        brand: kitAnalysis.items[0]?.brand || undefined,
+        reorderUrl: kitReorderUrl,
+        notes: `Contains: ${kitAnalysis.items.map(i => i.name).join(", ")}`,
+      });
+
+      // Then create individual items linked to the kit
       for (const index of selectedKitItems) {
         const item = kitAnalysis.items[index];
         await createCareSupply({
-          photoUrls: photoUrls, // Attach kit photo to all items
+          photoUrls: [], // Individual items don't need the kit photo
           name: item.name,
           category: item.category,
           subcategory: item.subcategory || undefined,
@@ -368,13 +381,13 @@ export function AddSupplyForm() {
           size: item.size || undefined,
           compatibleColors: item.compatibleColors,
           compatibleMaterials: item.compatibleMaterials,
-          reorderUrl: item.reorderUrl || undefined,
           notes: item.notes || undefined,
+          parentKitId: parentKit.id, // Link to parent kit
         });
         successCount++;
       }
 
-      toast.success(`Added ${successCount} supplies from kit`);
+      toast.success(`Added kit with ${successCount} items`);
       router.push("/shoe-care");
     } catch {
       toast.error(`Added ${successCount} items, but some failed`);

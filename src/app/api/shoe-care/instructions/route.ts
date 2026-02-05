@@ -38,11 +38,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Shoe not found" }, { status: 404 });
     }
 
-    // Get all their care supplies
+    // Get all their care supplies (excluding KIT category - we want individual items)
     const supplies = await prisma.careSupply.findMany({
       where: {
         personId: person.id,
         status: { in: ["IN_STOCK", "LOW_STOCK"] }, // Only available supplies
+        category: { not: "KIT" }, // Exclude kit containers, include individual items
+      },
+      include: {
+        parentKit: true, // Include kit info for context
       },
     });
 
@@ -57,7 +61,7 @@ export async function POST(request: NextRequest) {
         brand: shoe.brand,
       },
       supplies.map((s) => ({
-        name: s.name,
+        name: s.parentKit ? `${s.name} (from ${s.parentKit.name})` : s.name,
         category: s.category,
         subcategory: s.subcategory,
         brand: s.brand,
