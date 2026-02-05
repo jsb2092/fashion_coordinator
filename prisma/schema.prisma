@@ -58,6 +58,7 @@ enum SupplyCategory {
   CLOTH
   TOOL
   LACES
+  KIT
   OTHER
 }
 

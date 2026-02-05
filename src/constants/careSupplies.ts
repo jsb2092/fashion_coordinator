@@ -7,6 +7,7 @@ export const SUPPLY_CATEGORIES = [
   { value: "CLOTH", label: "Cloth" },
   { value: "TOOL", label: "Tool" },
   { value: "LACES", label: "Laces" },
+  { value: "KIT", label: "Kit" },
   { value: "OTHER", label: "Other" },
 ] as const;
 
@@ -21,6 +22,7 @@ export const SUPPLY_SUBCATEGORIES: Record<SupplyCategoryValue, string[]> = {
   CLOTH: ["Polishing cloth", "Microfiber cloth", "Chamois", "Application cloth", "Buffing cloth"],
   TOOL: ["Shoe horn", "Edge burnisher", "Heel grips", "Tongue pads"],
   LACES: ["Dress laces", "Round laces", "Flat laces", "Waxed laces", "Elastic laces"],
+  KIT: ["Complete care kit", "Starter kit", "Polish kit", "Travel kit", "Cleaning kit"],
   OTHER: ["Storage bag", "Shoe rack", "Boot stand", "Cedar balls"],
 };
 
