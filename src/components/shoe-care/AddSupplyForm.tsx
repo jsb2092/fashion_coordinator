@@ -192,17 +192,26 @@ export function AddSupplyForm() {
         });
 
         if (!analyzeRes.ok) {
-          throw new Error("Failed to analyze");
+          const errorText = await analyzeRes.text();
+          console.error("Kit analysis failed:", errorText);
+          throw new Error("Failed to analyze kit");
         }
 
         const data = await analyzeRes.json() as KitAnalysisResult;
-        if (data.isKit && data.items.length > 1) {
-          setKitAnalysis(data);
+        console.log("Kit analysis response:", JSON.stringify(data, null, 2));
+
+        if (data.items && data.items.length > 0) {
+          // Always show kit UI if we have items from kit description
+          setKitAnalysis({
+            isKit: true,
+            kitName: data.kitName || "Shoe Care Kit",
+            items: data.items,
+          });
           setSelectedKitItems(new Set(data.items.map((_, i) => i)));
           toast.success(`Found ${data.items.length} items in kit`);
-        } else if (data.items.length === 1) {
-          setAnalysis(data.items[0]);
-          toast.success("Product analyzed successfully");
+        } else {
+          console.error("No items found in kit response:", data);
+          toast.error("Could not parse kit contents - try adding items manually");
         }
       } else {
         // Regular single-item analysis
