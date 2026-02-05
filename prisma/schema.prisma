@@ -41,6 +41,25 @@ enum OccasionType {
   OTHER
 }
 
+enum SupplyStatus {
+  IN_STOCK
+  LOW_STOCK
+  OUT_OF_STOCK
+  ORDERED
+  DISCONTINUED
+}
+
+enum SupplyCategory {
+  POLISH
+  BRUSH
+  TREE
+  CLEANER
+  PROTECTION
+  TOOL
+  LACES
+  OTHER
+}
+
 model Person {
   id           String   @id @default(cuid())
   clerkUserId  String   @unique
@@ -54,6 +73,7 @@ model Person {
   wardrobeItems WardrobeItem[]
   outfits       Outfit[]
   chatSessions  ChatSession[]
+  careSupplies  CareSupply[]
 }
 
 model WardrobeItem {
@@ -97,6 +117,7 @@ model WardrobeItem {
   updatedAt        DateTime   @updatedAt
 
   outfitItems      OutfitItem[]
+  supplyLinks      ShoeSupplyLink[]
 
   @@index([personId])
   @@index([category])
@@ -222,4 +243,62 @@ model PackingList {
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+model CareSupply {
+  id                  String         @id @default(cuid())
+  personId            String
+  person              Person         @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  photoUrls           String[]
+  name                String
+  category            SupplyCategory
+  subcategory         String?
+  brand               String?
+  color               String?
+  size                String?
+
+  compatibleColors    String[]
+  compatibleMaterials String[]
+
+  status              SupplyStatus   @default(IN_STOCK)
+  quantity            Int            @default(1)
+  quantityUnit        String?
+  reorderThreshold    Int?
+
+  purchaseDate        DateTime?
+  purchasePrice       Decimal?       @db.Decimal(10, 2)
+  purchaseSource      String?
+  reorderUrl          String?
+  rating              Int?           // 1-5 star rating
+
+  lastUsed            DateTime?
+  timesUsed           Int            @default(0)
+  notes               String?
+
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  shoeLinks           ShoeSupplyLink[]
+
+  @@index([personId])
+  @@index([category])
+  @@index([status])
+}
+
+model ShoeSupplyLink {
+  id             String       @id @default(cuid())
+  careSupplyId   String
+  careSupply     CareSupply   @relation(fields: [careSupplyId], references: [id], onDelete: Cascade)
+  wardrobeItemId String
+  wardrobeItem   WardrobeItem @relation(fields: [wardrobeItemId], references: [id], onDelete: Cascade)
+
+  isPrimary      Boolean      @default(false)
+  notes          String?
+
+  createdAt      DateTime     @default(now())
+
+  @@unique([careSupplyId, wardrobeItemId])
+  @@index([careSupplyId])
+  @@index([wardrobeItemId])
 }

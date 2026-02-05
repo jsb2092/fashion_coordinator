@@ -407,3 +407,303 @@ export async function updateOutfit(
   revalidatePath("/outfits");
   return outfit;
 }
+
+// Care Supply Actions
+export async function getCareSupplies(filters?: {
+  category?: string;
+  status?: string;
+  search?: string;
+}) {
+  const person = await getOrCreatePerson();
+
+  const where: Record<string, unknown> = {
+    personId: person.id,
+  };
+
+  if (filters?.category) {
+    where.category = filters.category;
+  }
+
+  if (filters?.status) {
+    where.status = filters.status;
+  }
+
+  if (filters?.search) {
+    where.OR = [
+      { name: { contains: filters.search, mode: "insensitive" } },
+      { brand: { contains: filters.search, mode: "insensitive" } },
+      { subcategory: { contains: filters.search, mode: "insensitive" } },
+      { notes: { contains: filters.search, mode: "insensitive" } },
+    ];
+  }
+
+  return prisma.careSupply.findMany({
+    where,
+    orderBy: { createdAt: "desc" },
+    include: {
+      shoeLinks: {
+        include: {
+          wardrobeItem: true,
+        },
+      },
+    },
+  });
+}
+
+export async function getCareSupply(id: string) {
+  const person = await getOrCreatePerson();
+
+  return prisma.careSupply.findFirst({
+    where: {
+      id,
+      personId: person.id,
+    },
+    include: {
+      shoeLinks: {
+        include: {
+          wardrobeItem: true,
+        },
+      },
+    },
+  });
+}
+
+export async function createCareSupply(data: {
+  photoUrls?: string[];
+  name: string;
+  category: string;
+  subcategory?: string;
+  brand?: string;
+  color?: string;
+  size?: string;
+  compatibleColors?: string[];
+  compatibleMaterials?: string[];
+  status?: string;
+  quantity?: number;
+  quantityUnit?: string;
+  reorderThreshold?: number;
+  purchaseDate?: Date;
+  purchasePrice?: number;
+  purchaseSource?: string;
+  reorderUrl?: string;
+  rating?: number;
+  notes?: string;
+}) {
+  const person = await getOrCreatePerson();
+
+  const supply = await prisma.careSupply.create({
+    data: {
+      personId: person.id,
+      photoUrls: data.photoUrls || [],
+      name: data.name,
+      category: data.category as never,
+      subcategory: data.subcategory,
+      brand: data.brand,
+      color: data.color,
+      size: data.size,
+      compatibleColors: data.compatibleColors || [],
+      compatibleMaterials: data.compatibleMaterials || [],
+      status: (data.status as never) || "IN_STOCK",
+      quantity: data.quantity || 1,
+      quantityUnit: data.quantityUnit,
+      reorderThreshold: data.reorderThreshold,
+      purchaseDate: data.purchaseDate,
+      purchasePrice: data.purchasePrice,
+      purchaseSource: data.purchaseSource,
+      reorderUrl: data.reorderUrl,
+      rating: data.rating,
+      notes: data.notes,
+    },
+  });
+
+  revalidatePath("/shoe-care");
+  return supply;
+}
+
+export async function updateCareSupply(
+  id: string,
+  data: Partial<{
+    photoUrls: string[];
+    name: string;
+    category: string;
+    subcategory: string;
+    brand: string;
+    color: string;
+    size: string;
+    compatibleColors: string[];
+    compatibleMaterials: string[];
+    status: string;
+    quantity: number;
+    quantityUnit: string;
+    reorderThreshold: number;
+    purchaseDate: Date;
+    purchasePrice: number;
+    purchaseSource: string;
+    reorderUrl: string;
+    rating: number;
+    notes: string;
+  }>
+) {
+  const person = await getOrCreatePerson();
+
+  const supply = await prisma.careSupply.updateMany({
+    where: {
+      id,
+      personId: person.id,
+    },
+    data: data as never,
+  });
+
+  revalidatePath("/shoe-care");
+  return supply;
+}
+
+export async function deleteCareSupply(id: string) {
+  const person = await getOrCreatePerson();
+
+  await prisma.careSupply.deleteMany({
+    where: {
+      id,
+      personId: person.id,
+    },
+  });
+
+  revalidatePath("/shoe-care");
+}
+
+export async function recordSupplyUsage(id: string) {
+  const person = await getOrCreatePerson();
+
+  const supply = await prisma.careSupply.findFirst({
+    where: { id, personId: person.id },
+  });
+
+  if (!supply) {
+    throw new Error("Supply not found");
+  }
+
+  await prisma.careSupply.update({
+    where: { id },
+    data: {
+      timesUsed: supply.timesUsed + 1,
+      lastUsed: new Date(),
+    },
+  });
+
+  revalidatePath("/shoe-care");
+}
+
+export async function linkSupplyToShoe(
+  supplyId: string,
+  shoeId: string,
+  options?: { isPrimary?: boolean; notes?: string }
+) {
+  const person = await getOrCreatePerson();
+
+  // Verify ownership of both items
+  const supply = await prisma.careSupply.findFirst({
+    where: { id: supplyId, personId: person.id },
+  });
+  const shoe = await prisma.wardrobeItem.findFirst({
+    where: { id: shoeId, personId: person.id },
+  });
+
+  if (!supply || !shoe) {
+    throw new Error("Supply or shoe not found");
+  }
+
+  const link = await prisma.shoeSupplyLink.upsert({
+    where: {
+      careSupplyId_wardrobeItemId: {
+        careSupplyId: supplyId,
+        wardrobeItemId: shoeId,
+      },
+    },
+    create: {
+      careSupplyId: supplyId,
+      wardrobeItemId: shoeId,
+      isPrimary: options?.isPrimary || false,
+      notes: options?.notes,
+    },
+    update: {
+      isPrimary: options?.isPrimary,
+      notes: options?.notes,
+    },
+  });
+
+  revalidatePath("/shoe-care");
+  return link;
+}
+
+export async function unlinkSupplyFromShoe(supplyId: string, shoeId: string) {
+  const person = await getOrCreatePerson();
+
+  // Verify ownership
+  const supply = await prisma.careSupply.findFirst({
+    where: { id: supplyId, personId: person.id },
+  });
+
+  if (!supply) {
+    throw new Error("Supply not found");
+  }
+
+  await prisma.shoeSupplyLink.delete({
+    where: {
+      careSupplyId_wardrobeItemId: {
+        careSupplyId: supplyId,
+        wardrobeItemId: shoeId,
+      },
+    },
+  });
+
+  revalidatePath("/shoe-care");
+}
+
+export async function getCompatibleSuppliesForShoe(shoeId: string) {
+  const person = await getOrCreatePerson();
+
+  const shoe = await prisma.wardrobeItem.findFirst({
+    where: { id: shoeId, personId: person.id },
+  });
+
+  if (!shoe) {
+    throw new Error("Shoe not found");
+  }
+
+  // Get supplies that are compatible with this shoe's color or material
+  const supplies = await prisma.careSupply.findMany({
+    where: {
+      personId: person.id,
+      OR: [
+        { compatibleColors: { has: shoe.colorPrimary } },
+        shoe.material ? { compatibleMaterials: { has: shoe.material } } : {},
+        // Also include supplies already linked to this shoe
+        { shoeLinks: { some: { wardrobeItemId: shoeId } } },
+      ],
+    },
+    include: {
+      shoeLinks: {
+        where: { wardrobeItemId: shoeId },
+      },
+    },
+  });
+
+  return supplies;
+}
+
+export async function getShoes() {
+  const person = await getOrCreatePerson();
+
+  return prisma.wardrobeItem.findMany({
+    where: {
+      personId: person.id,
+      category: {
+        in: ["Dress Shoes", "Casual Shoes", "Boots", "Athletic Shoes", "Formal Shoes"],
+      },
+      status: {
+        notIn: ["ARCHIVED", "DONATED", "SOLD"],
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+}
