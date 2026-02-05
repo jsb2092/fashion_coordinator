@@ -368,28 +368,45 @@ export function AddSupplyForm() {
         notes: `Contains: ${kitAnalysis.items.map(i => i.name).join(", ")}`,
       });
 
+      // Valid categories for validation
+      const validCategories = ["POLISH", "BRUSH", "TREE", "CLEANER", "PROTECTION", "CLOTH", "TOOL", "LACES", "KIT", "OTHER"];
+
       // Then create individual items linked to the kit
       for (const index of selectedKitItems) {
         const item = kitAnalysis.items[index];
-        await createCareSupply({
-          photoUrls: [], // Individual items don't need the kit photo
-          name: item.name,
-          category: item.category,
-          subcategory: item.subcategory || undefined,
-          brand: item.brand || undefined,
-          color: item.color || undefined,
-          size: item.size || undefined,
-          compatibleColors: item.compatibleColors,
-          compatibleMaterials: item.compatibleMaterials,
-          notes: item.notes || undefined,
-          parentKitId: parentKit.id, // Link to parent kit
-        });
-        successCount++;
+        // Validate/fix category
+        const category = validCategories.includes(item.category?.toUpperCase())
+          ? item.category.toUpperCase()
+          : "OTHER";
+        try {
+          await createCareSupply({
+            photoUrls: [], // Individual items don't need the kit photo
+            name: item.name,
+            category: category,
+            subcategory: item.subcategory || undefined,
+            brand: item.brand || undefined,
+            color: item.color || undefined,
+            size: item.size || undefined,
+            compatibleColors: item.compatibleColors,
+            compatibleMaterials: item.compatibleMaterials,
+            notes: item.notes || undefined,
+            parentKitId: parentKit.id, // Link to parent kit
+          });
+          successCount++;
+        } catch (itemError) {
+          console.error(`Failed to create item ${item.name}:`, itemError);
+          console.error("Item data:", JSON.stringify(item, null, 2));
+        }
       }
 
-      toast.success(`Added kit with ${successCount} items`);
+      if (successCount > 0) {
+        toast.success(`Added kit with ${successCount} items`);
+      } else {
+        toast.error("Kit created but no items were added - check console for errors");
+      }
       router.push("/shoe-care");
-    } catch {
+    } catch (error) {
+      console.error("Kit creation error:", error);
       toast.error(`Added ${successCount} items, but some failed`);
     } finally {
       setAddingKitItems(false);
