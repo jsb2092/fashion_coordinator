@@ -1,6 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
-import { analyzeSupplyImage, analyzeSupplyKitFromUrl } from "@/lib/claude";
+import { analyzeSupplyImage, analyzeSupplyKitFromUrl, analyzeKitFromDescription } from "@/lib/claude";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import sharp from "sharp";
 
@@ -130,6 +130,12 @@ export async function POST(request: NextRequest) {
 
     if (images.length === 0) {
       throw new Error("No valid images to analyze");
+    }
+
+    // If kit description provided, parse as kit
+    if (kitDescription) {
+      const kitAnalysis = await analyzeKitFromDescription(kitDescription, images);
+      return NextResponse.json(kitAnalysis);
     }
 
     const analysis = await analyzeSupplyImage(images);

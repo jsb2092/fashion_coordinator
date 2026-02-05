@@ -513,6 +513,83 @@ etc.`,
   return result;
 }
 
+// Analyze kit from user description (with optional photo)
+export async function analyzeKitFromDescription(
+  description: string,
+  images?: Array<{ base64: string; mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp" }>
+): Promise<KitAnalysisResult> {
+  type MediaType = "image/jpeg" | "image/png" | "image/gif" | "image/webp";
+  const content: Array<
+    | { type: "image"; source: { type: "base64"; media_type: MediaType; data: string } }
+    | { type: "text"; text: string }
+  > = [];
+
+  // Add images if provided
+  if (images && images.length > 0) {
+    for (const img of images) {
+      content.push({
+        type: "image" as const,
+        source: { type: "base64" as const, media_type: img.mediaType, data: img.base64 },
+      });
+    }
+  }
+
+  content.push({
+    type: "text",
+    text: `The user has a shoe care kit and has described its contents:
+
+"${description}"
+
+Parse this description and create a separate entry for EACH individual item mentioned. The user knows what they bought, so trust their description completely.
+
+Categories: POLISH, BRUSH, TREE, CLEANER, PROTECTION, CLOTH, TOOL, LACES, OTHER
+
+Polish/cream colors: Black, Burgundy, Dark Brown, Medium Brown, Light Brown, Tan, Cognac, Navy, Neutral, Oxblood, Cordovan, Walnut, Mahogany
+
+Compatible materials: Smooth leather, Full-grain leather, Corrected-grain leather, Patent leather, Suede, Nubuck, Shell cordovan, Exotic leather, Canvas, Synthetic, Rubber
+
+Return a JSON object with:
+{
+  "isKit": true,
+  "kitName": "infer a name from the description or use 'Shoe Care Kit'",
+  "items": [
+    {
+      "name": "Individual item name (e.g., 'Black Cream Polish', 'Horsehair Brush - Light')",
+      "category": "POLISH" | "BRUSH" | "CLOTH" | etc.,
+      "subcategory": "specific type",
+      "brand": "brand if mentioned" or null,
+      "color": "for polish/cream" or null,
+      "size": null,
+      "compatibleColors": ["array", "of", "colors"] (for polishes, infer from color),
+      "compatibleMaterials": ["Smooth leather", "Full-grain leather"] (reasonable defaults),
+      "notes": null,
+      "estimatedPrice": null,
+      "reorderUrl": null
+    }
+  ]
+}
+
+IMPORTANT:
+- If the user says "2 brushes", create 2 separate brush entries
+- If colors are mentioned (e.g., "light and dark brush"), create separate entries for each
+- Every distinct item should be a separate entry in the items array`,
+  });
+
+  const response = await anthropic.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 4096,
+    messages: [{ role: "user", content }],
+  });
+
+  const text = response.content[0].type === "text" ? response.content[0].text : "";
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    throw new Error("Failed to parse kit description");
+  }
+
+  return JSON.parse(jsonMatch[0]) as KitAnalysisResult;
+}
+
 // Generate personalized shoe care instructions
 export interface ShoeForCare {
   category: string;

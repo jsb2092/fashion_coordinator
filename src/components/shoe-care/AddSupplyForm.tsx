@@ -180,20 +180,46 @@ export function AddSupplyForm() {
       }
       setPhotoUrls(uploadedUrls);
 
-      // Analyze with AI
-      const analyzeRes = await fetch("/api/supply/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageUrls: uploadedUrls }),
-      });
+      // If kit description provided, use kit analysis
+      if (kitDescription.trim()) {
+        const analyzeRes = await fetch("/api/supply/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            imageUrls: uploadedUrls,
+            kitDescription: kitDescription.trim(),
+          }),
+        });
 
-      if (!analyzeRes.ok) {
-        throw new Error("Failed to analyze");
+        if (!analyzeRes.ok) {
+          throw new Error("Failed to analyze");
+        }
+
+        const data = await analyzeRes.json() as KitAnalysisResult;
+        if (data.isKit && data.items.length > 1) {
+          setKitAnalysis(data);
+          setSelectedKitItems(new Set(data.items.map((_, i) => i)));
+          toast.success(`Found ${data.items.length} items in kit`);
+        } else if (data.items.length === 1) {
+          setAnalysis(data.items[0]);
+          toast.success("Product analyzed successfully");
+        }
+      } else {
+        // Regular single-item analysis
+        const analyzeRes = await fetch("/api/supply/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ imageUrls: uploadedUrls }),
+        });
+
+        if (!analyzeRes.ok) {
+          throw new Error("Failed to analyze");
+        }
+
+        const analysisData = await analyzeRes.json();
+        setAnalysis(analysisData);
+        toast.success("Photo analyzed successfully");
       }
-
-      const analysisData = await analyzeRes.json();
-      setAnalysis(analysisData);
-      toast.success("Photo analyzed successfully");
     } catch (error) {
       console.error("Upload/analyze error:", error);
       toast.error("Failed to analyze photo");
@@ -300,6 +326,7 @@ export function AddSupplyForm() {
     setSelectedKitItems(new Set());
     setPhotoUrls([]);
     setProductUrl("");
+    setKitDescription("");
     setFormData({
       name: "",
       category: "",
@@ -332,7 +359,7 @@ export function AddSupplyForm() {
       for (const index of selectedKitItems) {
         const item = kitAnalysis.items[index];
         await createCareSupply({
-          photoUrls: [],
+          photoUrls: photoUrls, // Attach kit photo to all items
           name: item.name,
           category: item.category,
           subcategory: item.subcategory || undefined,
@@ -839,12 +866,31 @@ export function AddSupplyForm() {
   // Initial mode selection
   return (
     <div className="space-y-6">
+      {/* Kit Description - Always visible at top */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Adding a Kit?</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            If this is a kit with multiple items, describe what&apos;s included and each item will be added separately
+          </p>
+        </CardHeader>
+        <CardContent>
+          <Textarea
+            value={kitDescription}
+            onChange={(e) => setKitDescription(e.target.value)}
+            placeholder="e.g., 2 horsehair brushes (light and dark), black cream polish, burgundy cream polish, neutral wax, 2 microfiber cloths, shoe horn"
+            rows={3}
+            disabled={isAnalyzing}
+          />
+        </CardContent>
+      </Card>
+
       {/* Photo Upload */}
       <Card>
         <CardHeader>
           <CardTitle>Upload Product Photo</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Take a photo of your shoe care product and AI will identify it
+            {kitDescription ? "Photo will be attached to all items in the kit" : "Take a photo and AI will identify the product"}
           </p>
         </CardHeader>
         <CardContent>
@@ -885,7 +931,9 @@ export function AddSupplyForm() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
                   </svg>
                   <p className="text-sm font-medium">Drag and drop a photo, or click to browse</p>
-                  <p className="text-xs text-muted-foreground mt-1">AI will identify the product automatically</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {kitDescription ? "Upload kit photo" : "AI will identify the product automatically"}
+                  </p>
                 </>
               )}
             </label>
@@ -908,7 +956,7 @@ export function AddSupplyForm() {
         <CardHeader>
           <CardTitle>Product URL</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Paste an Amazon or retailer link to extract product info (also works for kits)
+            Paste an Amazon or retailer link to extract product info
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -934,19 +982,6 @@ export function AddSupplyForm() {
                 "Extract Info"
               )}
             </Button>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="kit-description" className="text-sm text-muted-foreground">
-              Kit contents (optional - helps AI identify items if not auto-detected)
-            </Label>
-            <Textarea
-              id="kit-description"
-              value={kitDescription}
-              onChange={(e) => setKitDescription(e.target.value)}
-              placeholder="e.g., 2 horsehair brushes (light and dark), black cream polish, burgundy cream polish, neutral wax, 2 microfiber cloths, shoe horn"
-              rows={3}
-              disabled={isAnalyzing}
-            />
           </div>
         </CardContent>
       </Card>
