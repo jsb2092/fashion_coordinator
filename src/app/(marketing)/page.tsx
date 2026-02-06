@@ -93,29 +93,25 @@ export default function LandingPage() {
           </p>
           <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
             <ScreenshotCard
-              title="Wardrobe Grid"
-              description="Browse all your items at a glance with our visual grid layout."
-            >
-              <MockWardrobeGrid />
-            </ScreenshotCard>
+              title="Digital Wardrobe"
+              description="Browse all your items at a glance with filters for category, season, and more."
+              src="/screenshots/wardrobe.png"
+            />
             <ScreenshotCard
-              title="Outfit Builder"
-              description="Mix and match items to create the perfect outfit."
-            >
-              <MockOutfitBuilder />
-            </ScreenshotCard>
+              title="AI Outfit Suggestions"
+              description="Get personalized outfit recommendations from Claude based on your wardrobe."
+              src="/screenshots/chat.png"
+            />
             <ScreenshotCard
-              title="AI Chat"
-              description="Get instant styling advice from our AI assistant."
-            >
-              <MockChat />
-            </ScreenshotCard>
+              title="Saved Outfits"
+              description="Build and save outfit combinations for any occasion."
+              src="/screenshots/outfits.png"
+            />
             <ScreenshotCard
-              title="Shoe Care Dashboard"
-              description="Track polish schedules and care supplies."
-            >
-              <MockShoeCare />
-            </ScreenshotCard>
+              title="Shoe Care Instructions"
+              description="Personalized care routines based on your shoes and supplies."
+              src="/screenshots/shoe-care.png"
+            />
           </div>
         </div>
       </section>
@@ -165,15 +161,21 @@ function FeatureCard({
 function ScreenshotCard({
   title,
   description,
-  children,
+  src,
 }: {
   title: string;
   description: string;
-  children: React.ReactNode;
+  src: string;
 }) {
   return (
-    <div className="rounded-xl border bg-card overflow-hidden">
-      <div className="aspect-[4/3] bg-muted/50 p-4">{children}</div>
+    <div className="rounded-xl border bg-card overflow-hidden shadow-lg">
+      <div className="aspect-[4/3] bg-muted/50 overflow-hidden">
+        <img
+          src={src}
+          alt={title}
+          className="w-full h-full object-cover object-top"
+        />
+      </div>
       <div className="p-4 border-t">
         <h3 className="font-semibold mb-1">{title}</h3>
         <p className="text-sm text-muted-foreground">{description}</p>
@@ -182,11 +184,11 @@ function ScreenshotCard({
   );
 }
 
-// Mock UI Components for Screenshots
+// App Preview with real screenshot
 function AppPreview() {
   return (
     <div className="rounded-xl border bg-card shadow-2xl overflow-hidden">
-      {/* Mock browser chrome */}
+      {/* Browser chrome */}
       <div className="h-8 bg-muted border-b flex items-center px-3 gap-2">
         <div className="flex gap-1.5">
           <div className="w-3 h-3 rounded-full bg-red-400" />
@@ -199,129 +201,11 @@ function AppPreview() {
           </div>
         </div>
       </div>
-      {/* Mock app */}
-      <div className="flex h-[400px]">
-        {/* Sidebar */}
-        <div className="w-48 border-r bg-background p-4 hidden sm:block">
-          <div className="font-semibold mb-4">Outfit IQ</div>
-          <div className="space-y-2">
-            <div className="px-3 py-2 rounded bg-primary/10 text-primary text-sm">Wardrobe</div>
-            <div className="px-3 py-2 text-sm text-muted-foreground">Outfits</div>
-            <div className="px-3 py-2 text-sm text-muted-foreground">Shoe Care</div>
-            <div className="px-3 py-2 text-sm text-muted-foreground">Ask Claude</div>
-          </div>
-        </div>
-        {/* Content */}
-        <div className="flex-1 p-4 bg-background">
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <div className="font-semibold">My Wardrobe</div>
-              <div className="text-xs text-muted-foreground">24 items</div>
-            </div>
-            <div className="px-3 py-1.5 bg-primary text-primary-foreground rounded text-sm">Add Item</div>
-          </div>
-          <div className="grid grid-cols-4 gap-3">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="aspect-square rounded bg-muted" />
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function MockWardrobeGrid() {
-  const colors = ["bg-blue-200", "bg-gray-200", "bg-amber-100", "bg-slate-700", "bg-white", "bg-rose-100"];
-  return (
-    <div className="h-full flex flex-col">
-      <div className="flex gap-2 mb-3">
-        <div className="px-2 py-1 bg-primary/10 rounded text-xs">All</div>
-        <div className="px-2 py-1 bg-muted rounded text-xs">Tops</div>
-        <div className="px-2 py-1 bg-muted rounded text-xs">Pants</div>
-        <div className="px-2 py-1 bg-muted rounded text-xs">Shoes</div>
-      </div>
-      <div className="grid grid-cols-4 gap-2 flex-1">
-        {colors.map((color, i) => (
-          <div key={i} className={`rounded ${color} border`} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function MockOutfitBuilder() {
-  return (
-    <div className="h-full flex gap-3">
-      <div className="flex-1 flex flex-col gap-2">
-        <div className="flex-1 rounded bg-blue-100 border flex items-center justify-center text-xs text-muted-foreground">
-          Shirt
-        </div>
-        <div className="flex-1 rounded bg-slate-700 border flex items-center justify-center text-xs text-white">
-          Pants
-        </div>
-        <div className="h-16 rounded bg-amber-800 border flex items-center justify-center text-xs text-white">
-          Shoes
-        </div>
-      </div>
-      <div className="w-24 space-y-2">
-        <div className="text-xs font-medium">Occasion</div>
-        <div className="px-2 py-1 bg-muted rounded text-xs">Business</div>
-        <div className="text-xs font-medium mt-3">Weather</div>
-        <div className="px-2 py-1 bg-muted rounded text-xs">Mild</div>
-      </div>
-    </div>
-  );
-}
-
-function MockChat() {
-  return (
-    <div className="h-full flex flex-col">
-      <div className="flex-1 space-y-2 overflow-hidden">
-        <div className="flex gap-2">
-          <div className="w-6 h-6 rounded-full bg-muted shrink-0" />
-          <div className="px-3 py-2 bg-muted rounded-lg text-xs max-w-[80%]">
-            What should I wear to a business dinner?
-          </div>
-        </div>
-        <div className="flex gap-2 justify-end">
-          <div className="px-3 py-2 bg-primary text-primary-foreground rounded-lg text-xs max-w-[80%]">
-            I&apos;d suggest your navy blazer with the light blue shirt and charcoal trousers...
-          </div>
-        </div>
-      </div>
-      <div className="mt-2 flex gap-2">
-        <div className="flex-1 px-3 py-2 bg-muted rounded text-xs text-muted-foreground">
-          Ask about your wardrobe...
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function MockShoeCare() {
-  return (
-    <div className="h-full flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <div className="text-xs font-medium">Due for care</div>
-        <div className="text-xs text-primary">View all</div>
-      </div>
-      <div className="space-y-2 flex-1">
-        <div className="flex items-center gap-2 p-2 bg-muted rounded">
-          <div className="w-10 h-10 rounded bg-amber-800" />
-          <div className="flex-1">
-            <div className="text-xs font-medium">Oxford Brogues</div>
-            <div className="text-xs text-orange-500">Due today</div>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 p-2 bg-muted rounded">
-          <div className="w-10 h-10 rounded bg-black" />
-          <div className="flex-1">
-            <div className="text-xs font-medium">Chelsea Boots</div>
-            <div className="text-xs text-muted-foreground">Due in 3 days</div>
-          </div>
-        </div>
-      </div>
+      <img
+        src="/screenshots/wardrobe.png"
+        alt="Outfit IQ Wardrobe"
+        className="w-full"
+      />
     </div>
   );
 }
