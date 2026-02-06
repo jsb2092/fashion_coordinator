@@ -159,38 +159,15 @@ export function ItemDetailModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            <span>{currentData.name || currentData.category}</span>
-            <div className="flex gap-2">
-              {!isEditing ? (
-                <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-                  Edit
-                </Button>
-              ) : (
-                <>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setIsEditing(false);
-                      setFormData({});
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button size="sm" onClick={handleSave} disabled={isSaving}>
-                    {isSaving ? "Saving..." : "Save"}
-                  </Button>
-                </>
-              )}
-            </div>
-          </DialogTitle>
+      <DialogContent className="max-w-4xl h-[85vh] flex flex-col p-0">
+        <DialogHeader className="px-6 py-4 border-b shrink-0">
+          <DialogTitle>{currentData.name || currentData.category}</DialogTitle>
         </DialogHeader>
 
-        {/* Quick Status Change - Always visible */}
-        <div className="flex items-center gap-3 py-2 px-1 border-b">
+        {/* Scrollable content area */}
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          {/* Quick Status Change - Always visible */}
+          <div className="flex items-center gap-3 py-2 mb-4 border-b">
           <Label className="text-sm text-muted-foreground shrink-0">Status:</Label>
           <Select
             value={currentData.status}
@@ -415,16 +392,12 @@ export function ItemDetailModal({
               )}
             </div>
 
-            <div className="flex justify-between items-center pt-4 border-t">
-              <Button variant="destructive" size="sm" onClick={handleDelete}>
-                Delete Item
-              </Button>
-              <div className="text-sm text-muted-foreground text-right">
-                <p>Worn {currentData.timesWorn} times</p>
-                {currentData.lastWorn && (
-                  <p>Last worn: {new Date(currentData.lastWorn).toLocaleDateString()}</p>
-                )}
-              </div>
+            {/* Wear stats */}
+            <div className="pt-4 border-t text-sm text-muted-foreground">
+              <p>Worn {currentData.timesWorn} times</p>
+              {currentData.lastWorn && (
+                <p>Last worn: {new Date(currentData.lastWorn).toLocaleDateString()}</p>
+              )}
             </div>
           </TabsContent>
 
@@ -474,6 +447,38 @@ export function ItemDetailModal({
             )}
           </TabsContent>
         </Tabs>
+        </div>
+
+        {/* Fixed footer with action buttons */}
+        <div className="shrink-0 border-t bg-background px-6 py-4">
+          <div className="flex items-center justify-between">
+            <Button variant="destructive" size="sm" onClick={handleDelete}>
+              Delete Item
+            </Button>
+            <div className="flex gap-2">
+              {!isEditing ? (
+                <Button onClick={() => setIsEditing(true)}>
+                  Edit Item
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsEditing(false);
+                      setFormData({});
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSave} disabled={isSaving}>
+                    {isSaving ? "Saving..." : "Save Changes"}
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
