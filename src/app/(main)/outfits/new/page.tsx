@@ -168,7 +168,7 @@ export default function NewOutfitPage() {
                             <img
                               src={item.photoUrls[0]}
                               alt={item.category}
-                              className="h-full w-full object-contain"
+                              className="h-full w-full object-cover"
                             />
                           ) : (
                             <div className="h-full w-full bg-muted flex items-center justify-center text-xs text-muted-foreground p-2 text-center">
