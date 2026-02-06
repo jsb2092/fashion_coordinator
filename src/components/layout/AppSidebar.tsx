@@ -6,14 +6,13 @@ import { useTheme } from "next-themes";
 import { UserButton } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { SidebarAd } from "@/components/ads/BannerAd";
 
 interface AppSidebarProps {
   subscriptionTier?: string;
 }
 
 const navigation = [
-  { name: "Wardrobe", href: "/", icon: WardrobeIcon },
+  { name: "Wardrobe", href: "/wardrobe", icon: WardrobeIcon },
   { name: "Outfits", href: "/outfits", icon: OutfitIcon },
   { name: "Shoe Care", href: "/shoe-care", icon: ShoeCareIcon },
   { name: "Ask Claude", href: "/chat", icon: ChatIcon, proOnly: true },
@@ -201,7 +200,7 @@ export function AppSidebar({ subscriptionTier = "free" }: AppSidebarProps) {
   return (
     <div className="flex h-full w-64 flex-col border-r bg-background">
       <div className="flex h-16 items-center border-b px-6">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/wardrobe" className="flex items-center gap-2">
           <span className="text-xl font-semibold">Outfit IQ</span>
           {isPro && (
             <span className="text-xs font-medium bg-primary text-primary-foreground px-1.5 py-0.5 rounded">
@@ -214,7 +213,7 @@ export function AppSidebar({ subscriptionTier = "free" }: AppSidebarProps) {
         {navigation.map((item) => {
           const isActive =
             pathname === item.href ||
-            (item.href !== "/" && pathname.startsWith(item.href));
+            pathname.startsWith(item.href + "/");
           return (
             <Link
               key={item.name}
@@ -237,11 +236,6 @@ export function AppSidebar({ subscriptionTier = "free" }: AppSidebarProps) {
           );
         })}
       </nav>
-      {!isPro && (
-        <div className="px-4 pb-2">
-          <SidebarAd />
-        </div>
-      )}
       <div className="border-t p-4 space-y-3">
         {!isPro && (
           <Link href="/pricing">
