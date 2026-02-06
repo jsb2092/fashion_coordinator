@@ -279,11 +279,24 @@ export async function seedDemoAccount() {
         name: "Demo User",
         email: DEMO_EMAIL,
         hasCompletedOnboarding: true,
+        subscriptionTier: "pro",
+        subscriptionStatus: "active",
       },
     });
     console.log("[Demo Seed] Created Person record:", person.id);
   } else {
     console.log("[Demo Seed] Person record already exists:", person.id);
+    // Ensure demo account is Pro
+    if (person.subscriptionTier !== "pro") {
+      await prisma.person.update({
+        where: { id: person.id },
+        data: {
+          subscriptionTier: "pro",
+          subscriptionStatus: "active",
+        },
+      });
+      console.log("[Demo Seed] Updated demo account to Pro tier");
+    }
   }
 
   // Check if wardrobe items exist
