@@ -158,7 +158,7 @@ export default function NewOutfitPage() {
                         <div
                           key={item.id}
                           onClick={() => toggleItem(item)}
-                          className={`aspect-square rounded-lg overflow-hidden cursor-pointer border-2 transition-all ${
+                          className={`group relative aspect-square rounded-lg overflow-hidden cursor-pointer border-2 transition-all bg-muted ${
                             isSelected
                               ? "border-primary ring-2 ring-primary/20"
                               : "border-transparent hover:border-muted-foreground/20"
@@ -168,11 +168,27 @@ export default function NewOutfitPage() {
                             <img
                               src={item.photoUrls[0]}
                               alt={item.category}
-                              className="h-full w-full object-cover"
+                              className="h-full w-full object-contain"
                             />
                           ) : (
                             <div className="h-full w-full bg-muted flex items-center justify-center text-xs text-muted-foreground p-2 text-center">
                               {item.category}
+                            </div>
+                          )}
+                          {/* Item details overlay on hover */}
+                          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <p className="text-white text-xs font-medium truncate">
+                              {item.name || item.category}
+                            </p>
+                            <p className="text-white/70 text-xs truncate">
+                              {item.colorPrimary}{item.brand ? ` • ${item.brand}` : ""}
+                            </p>
+                          </div>
+                          {isSelected && (
+                            <div className="absolute top-1 right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                              <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                              </svg>
                             </div>
                           )}
                         </div>

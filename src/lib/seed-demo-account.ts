@@ -1,6 +1,6 @@
 import { clerkClient } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
-import { Season } from "@prisma/client";
+import { Season, SupplyCategory, SupplyStatus } from "@prisma/client";
 
 const DEMO_EMAIL = "demo@outfit-iq.com";
 const DEMO_PASSWORD = "DemoAccount123!";
@@ -240,6 +240,93 @@ const DEMO_ITEMS: Array<{
   },
 ];
 
+const DEMO_SUPPLIES: Array<{
+  name: string;
+  category: SupplyCategory;
+  subcategory?: string;
+  brand?: string;
+  color?: string;
+  status: SupplyStatus;
+  compatibleColors: string[];
+  compatibleMaterials: string[];
+}> = [
+  {
+    name: "Black Shoe Polish",
+    category: "POLISH",
+    subcategory: "Wax Polish",
+    brand: "Saphir",
+    color: "Black",
+    status: "IN_STOCK",
+    compatibleColors: ["Black"],
+    compatibleMaterials: ["Leather"],
+  },
+  {
+    name: "Brown Shoe Polish",
+    category: "POLISH",
+    subcategory: "Wax Polish",
+    brand: "Saphir",
+    color: "Medium Brown",
+    status: "IN_STOCK",
+    compatibleColors: ["Brown", "Tan", "Cognac"],
+    compatibleMaterials: ["Leather"],
+  },
+  {
+    name: "Neutral Cream Polish",
+    category: "POLISH",
+    subcategory: "Cream Polish",
+    brand: "Saphir",
+    color: "Neutral",
+    status: "IN_STOCK",
+    compatibleColors: [],
+    compatibleMaterials: ["Leather"],
+  },
+  {
+    name: "Horsehair Brush",
+    category: "BRUSH",
+    subcategory: "Polishing Brush",
+    brand: "Valentino Garemi",
+    status: "IN_STOCK",
+    compatibleColors: [],
+    compatibleMaterials: ["Leather"],
+  },
+  {
+    name: "Dauber Brush",
+    category: "BRUSH",
+    subcategory: "Application Brush",
+    brand: "Kiwi",
+    status: "IN_STOCK",
+    compatibleColors: [],
+    compatibleMaterials: ["Leather"],
+  },
+  {
+    name: "Cedar Shoe Trees",
+    category: "TREE",
+    subcategory: "Full Shoe Tree",
+    brand: "Woodlore",
+    status: "IN_STOCK",
+    compatibleColors: [],
+    compatibleMaterials: ["Leather", "Suede"],
+  },
+  {
+    name: "Leather Conditioner",
+    category: "CLEANER",
+    subcategory: "Conditioner",
+    brand: "Lexol",
+    status: "IN_STOCK",
+    compatibleColors: [],
+    compatibleMaterials: ["Leather"],
+  },
+  {
+    name: "Suede Eraser",
+    category: "CLEANER",
+    subcategory: "Suede Care",
+    brand: "Jason Markk",
+    status: "IN_STOCK",
+    compatibleColors: [],
+    compatibleMaterials: ["Suede", "Nubuck"],
+  },
+];
+
 export async function seedDemoAccount() {
   console.log("[Demo Seed] Starting demo account setup...");
 
@@ -325,6 +412,31 @@ export async function seedDemoAccount() {
     console.log("[Demo Seed] Created", created.count, "wardrobe items");
   } else {
     console.log("[Demo Seed] Wardrobe items already exist:", existingItems);
+  }
+
+  // Check if care supplies exist
+  const existingSupplies = await prisma.careSupply.count({
+    where: { personId: person.id },
+  });
+
+  if (existingSupplies === 0) {
+    // Create demo care supplies
+    const createdSupplies = await prisma.careSupply.createMany({
+      data: DEMO_SUPPLIES.map((supply) => ({
+        personId: person.id,
+        name: supply.name,
+        category: supply.category,
+        subcategory: supply.subcategory,
+        brand: supply.brand,
+        color: supply.color,
+        status: supply.status,
+        compatibleColors: supply.compatibleColors,
+        compatibleMaterials: supply.compatibleMaterials,
+      })),
+    });
+    console.log("[Demo Seed] Created", createdSupplies.count, "care supplies");
+  } else {
+    console.log("[Demo Seed] Care supplies already exist:", existingSupplies);
   }
 
   console.log("[Demo Seed] Demo account setup complete!");
