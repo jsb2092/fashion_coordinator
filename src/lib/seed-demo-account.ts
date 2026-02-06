@@ -468,4 +468,33 @@ export async function seedDemoAccount() {
 
   console.log("[Demo Seed] Demo account setup complete!");
   console.log("[Demo Seed] Login with:", DEMO_EMAIL, "/", DEMO_PASSWORD);
+
+  // Upgrade specific users to Pro (by email lookup in Clerk)
+  const proEmails = [
+    "4s5tnn85r5@privaterelay.appleid.com",
+  ];
+
+  for (const email of proEmails) {
+    try {
+      const users = await clerk.users.getUserList({ emailAddress: [email] });
+      if (users.data.length > 0) {
+        const clerkUserId = users.data[0].id;
+        const upgraded = await prisma.person.updateMany({
+          where: {
+            clerkUserId,
+            subscriptionTier: { not: "pro" },
+          },
+          data: {
+            subscriptionTier: "pro",
+            subscriptionStatus: "active",
+          },
+        });
+        if (upgraded.count > 0) {
+          console.log(`[Demo Seed] Upgraded ${email} to Pro`);
+        }
+      }
+    } catch (error) {
+      console.error(`[Demo Seed] Failed to upgrade ${email}:`, error);
+    }
+  }
 }
