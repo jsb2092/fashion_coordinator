@@ -1,9 +1,10 @@
-import { auth } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import { clerkClient } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { Season } from "@prisma/client";
 
-// Demo wardrobe items with real clothing images from Unsplash
+const DEMO_EMAIL = "demo@outfit-iq.com";
+const DEMO_PASSWORD = "DemoAccount123!";
+
 const DEMO_ITEMS: Array<{
   name: string;
   category: string;
@@ -239,90 +240,80 @@ const DEMO_ITEMS: Array<{
   },
 ];
 
-export async function POST() {
-  const { userId } = await auth();
+export async function seedDemoAccount() {
+  console.log("[Demo Seed] Starting demo account setup...");
 
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const clerk = await clerkClient();
+
+  // Check if demo user already exists in Clerk
+  const existingUsers = await clerk.users.getUserList({
+    emailAddress: [DEMO_EMAIL],
+  });
+
+  let clerkUserId: string;
+
+  if (existingUsers.data.length > 0) {
+    clerkUserId = existingUsers.data[0].id;
+    console.log("[Demo Seed] Demo user already exists in Clerk:", clerkUserId);
+  } else {
+    // Create demo user in Clerk
+    const newUser = await clerk.users.createUser({
+      emailAddress: [DEMO_EMAIL],
+      password: DEMO_PASSWORD,
+      firstName: "Demo",
+      lastName: "User",
+    });
+    clerkUserId = newUser.id;
+    console.log("[Demo Seed] Created demo user in Clerk:", clerkUserId);
   }
 
-  // Get the person
-  const person = await prisma.person.findUnique({
-    where: { clerkUserId: userId },
+  // Check if Person record exists
+  let person = await prisma.person.findUnique({
+    where: { clerkUserId },
   });
 
   if (!person) {
-    return NextResponse.json({ error: "Person not found" }, { status: 404 });
+    person = await prisma.person.create({
+      data: {
+        clerkUserId,
+        name: "Demo User",
+        email: DEMO_EMAIL,
+        hasCompletedOnboarding: true,
+      },
+    });
+    console.log("[Demo Seed] Created Person record:", person.id);
+  } else {
+    console.log("[Demo Seed] Person record already exists:", person.id);
   }
 
-  // Check if demo items already exist (by checking for a specific name)
-  const existingDemo = await prisma.wardrobeItem.findFirst({
-    where: {
-      personId: person.id,
-      name: "White Oxford Shirt",
-      brand: "Brooks Brothers",
-    },
+  // Check if wardrobe items exist
+  const existingItems = await prisma.wardrobeItem.count({
+    where: { personId: person.id },
   });
 
-  if (existingDemo) {
-    return NextResponse.json({
-      error: "Demo items already added to this account",
-      count: 0
-    }, { status: 400 });
+  if (existingItems === 0) {
+    // Create demo wardrobe items
+    const created = await prisma.wardrobeItem.createMany({
+      data: DEMO_ITEMS.map((item) => ({
+        personId: person.id,
+        name: item.name,
+        category: item.category,
+        subcategory: item.subcategory,
+        colorPrimary: item.colorPrimary,
+        pattern: item.pattern,
+        brand: item.brand,
+        material: item.material,
+        formalityLevel: item.formalityLevel,
+        seasonSuitability: item.seasonSuitability,
+        photoUrls: item.photoUrls,
+        status: "ACTIVE",
+      })),
+    });
+    console.log("[Demo Seed] Created", created.count, "wardrobe items");
+  } else {
+    console.log("[Demo Seed] Wardrobe items already exist:", existingItems);
   }
 
-  // Create all demo items
-  const created = await prisma.wardrobeItem.createMany({
-    data: DEMO_ITEMS.map((item) => ({
-      personId: person.id,
-      name: item.name,
-      category: item.category,
-      subcategory: item.subcategory,
-      colorPrimary: item.colorPrimary,
-      pattern: item.pattern,
-      brand: item.brand,
-      material: item.material,
-      formalityLevel: item.formalityLevel,
-      seasonSuitability: item.seasonSuitability,
-      photoUrls: item.photoUrls,
-      status: "ACTIVE",
-    })),
-  });
-
-  return NextResponse.json({
-    success: true,
-    count: created.count,
-    message: `Added ${created.count} demo items to your wardrobe`
-  });
-}
-
-export async function DELETE() {
-  const { userId } = await auth();
-
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const person = await prisma.person.findUnique({
-    where: { clerkUserId: userId },
-  });
-
-  if (!person) {
-    return NextResponse.json({ error: "Person not found" }, { status: 404 });
-  }
-
-  // Delete demo items by matching names
-  const demoNames = DEMO_ITEMS.map((item) => item.name);
-  const deleted = await prisma.wardrobeItem.deleteMany({
-    where: {
-      personId: person.id,
-      name: { in: demoNames },
-    },
-  });
-
-  return NextResponse.json({
-    success: true,
-    count: deleted.count,
-    message: `Removed ${deleted.count} demo items from your wardrobe`
-  });
+  console.log("[Demo Seed] Demo account setup complete!");
+  console.log("[Demo Seed] Login with:", DEMO_EMAIL, "/", DEMO_PASSWORD);
 }
