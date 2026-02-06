@@ -386,15 +386,18 @@ export async function seedDemoAccount() {
     }
   }
 
-  // Check if wardrobe items exist
-  const existingItems = await prisma.wardrobeItem.count({
+  // Check for missing wardrobe items and add them
+  const existingItemNames = await prisma.wardrobeItem.findMany({
     where: { personId: person.id },
+    select: { name: true },
   });
+  const existingNames = new Set(existingItemNames.map((i) => i.name));
 
-  if (existingItems === 0) {
-    // Create demo wardrobe items
+  const missingItems = DEMO_ITEMS.filter((item) => !existingNames.has(item.name));
+
+  if (missingItems.length > 0) {
     const created = await prisma.wardrobeItem.createMany({
-      data: DEMO_ITEMS.map((item) => ({
+      data: missingItems.map((item) => ({
         personId: person.id,
         name: item.name,
         category: item.category,
@@ -409,20 +412,23 @@ export async function seedDemoAccount() {
         status: "ACTIVE",
       })),
     });
-    console.log("[Demo Seed] Created", created.count, "wardrobe items");
+    console.log("[Demo Seed] Created", created.count, "missing wardrobe items");
   } else {
-    console.log("[Demo Seed] Wardrobe items already exist:", existingItems);
+    console.log("[Demo Seed] All wardrobe items already exist");
   }
 
-  // Check if care supplies exist
-  const existingSupplies = await prisma.careSupply.count({
+  // Check for missing care supplies and add them
+  const existingSupplyNames = await prisma.careSupply.findMany({
     where: { personId: person.id },
+    select: { name: true },
   });
+  const existingSupplySet = new Set(existingSupplyNames.map((s) => s.name));
 
-  if (existingSupplies === 0) {
-    // Create demo care supplies
+  const missingSupplies = DEMO_SUPPLIES.filter((s) => !existingSupplySet.has(s.name));
+
+  if (missingSupplies.length > 0) {
     const createdSupplies = await prisma.careSupply.createMany({
-      data: DEMO_SUPPLIES.map((supply) => ({
+      data: missingSupplies.map((supply) => ({
         personId: person.id,
         name: supply.name,
         category: supply.category,
@@ -434,9 +440,9 @@ export async function seedDemoAccount() {
         compatibleMaterials: supply.compatibleMaterials,
       })),
     });
-    console.log("[Demo Seed] Created", createdSupplies.count, "care supplies");
+    console.log("[Demo Seed] Created", createdSupplies.count, "missing care supplies");
   } else {
-    console.log("[Demo Seed] Care supplies already exist:", existingSupplies);
+    console.log("[Demo Seed] All care supplies already exist");
   }
 
   console.log("[Demo Seed] Demo account setup complete!");
