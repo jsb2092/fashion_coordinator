@@ -64,9 +64,10 @@ export function BannerAd({ slot, format = "auto", className }: BannerAdProps) {
 
 export function SidebarAd() {
   const clientId = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID;
+  const slotId = process.env.NEXT_PUBLIC_ADSENSE_SIDEBAR_SLOT;
 
-  // Show placeholder if AdSense is not configured
-  if (!clientId) {
+  // Show placeholder if AdSense is not fully configured
+  if (!clientId || !slotId) {
     return (
       <div className="p-3 bg-muted/30 rounded-lg text-center">
         <p className="text-xs text-muted-foreground">
@@ -78,7 +79,7 @@ export function SidebarAd() {
 
   return (
     <BannerAd
-      slot={process.env.NEXT_PUBLIC_ADSENSE_SIDEBAR_SLOT || ""}
+      slot={slotId}
       format="rectangle"
       className="w-full"
     />
@@ -87,9 +88,10 @@ export function SidebarAd() {
 
 export function ContentBannerAd() {
   const clientId = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID;
+  const slotId = process.env.NEXT_PUBLIC_ADSENSE_BANNER_SLOT;
 
-  // Show placeholder if AdSense is not configured
-  if (!clientId) {
+  // Show placeholder if AdSense is not fully configured
+  if (!clientId || !slotId) {
     return (
       <div className="fixed bottom-0 left-64 right-0 h-[60px] bg-muted/50 border-t flex items-center justify-center">
         <p className="text-xs text-muted-foreground">
@@ -102,7 +104,7 @@ export function ContentBannerAd() {
   return (
     <div className="fixed bottom-0 left-64 right-0 h-[60px] bg-background border-t">
       <BannerAd
-        slot={process.env.NEXT_PUBLIC_ADSENSE_BANNER_SLOT || ""}
+        slot={slotId}
         format="horizontal"
         className="h-full"
       />
