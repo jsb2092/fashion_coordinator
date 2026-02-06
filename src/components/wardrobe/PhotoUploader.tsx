@@ -3,6 +3,71 @@
 import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+const COMPRESSION_THRESHOLD = 10 * 1024 * 1024; // 10MB - compress if larger
+
+// Compress image using canvas
+async function compressImage(file: File, maxSizeMB: number = 10): Promise<File> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      // Calculate new dimensions (max 2000px on longest side)
+      let { width, height } = img;
+      const maxDim = 2000;
+      if (width > maxDim || height > maxDim) {
+        if (width > height) {
+          height = (height / width) * maxDim;
+          width = maxDim;
+        } else {
+          width = (width / height) * maxDim;
+          height = maxDim;
+        }
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        reject(new Error("Could not get canvas context"));
+        return;
+      }
+
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // Start with quality 0.9 and reduce if needed
+      let quality = 0.9;
+      const tryCompress = () => {
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              reject(new Error("Could not compress image"));
+              return;
+            }
+
+            if (blob.size > maxSizeMB * 1024 * 1024 && quality > 0.3) {
+              quality -= 0.1;
+              tryCompress();
+            } else {
+              const compressedFile = new File([blob], file.name, {
+                type: "image/jpeg",
+                lastModified: Date.now(),
+              });
+              resolve(compressedFile);
+            }
+          },
+          "image/jpeg",
+          quality
+        );
+      };
+      tryCompress();
+    };
+    img.onerror = () => reject(new Error("Could not load image"));
+    img.src = URL.createObjectURL(file);
+  });
+}
 
 interface PhotoUploaderProps {
   onUpload: (files: File[]) => void;
@@ -20,6 +85,7 @@ export function PhotoUploader({
   const [isDragging, setIsDragging] = useState(false);
   const [previews, setPreviews] = useState<string[]>([]);
   const [files, setFiles] = useState<File[]>([]);
+  const [isCompressing, setIsCompressing] = useState(false);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -32,34 +98,67 @@ export function PhotoUploader({
   }, []);
 
   const processFiles = useCallback(
-    (newFiles: FileList | null) => {
+    async (newFiles: FileList | null) => {
       if (!newFiles) return;
 
-      const validFiles = Array.from(newFiles)
+      const imageFiles = Array.from(newFiles)
         .filter((file) => file.type.startsWith("image/"))
         .slice(0, maxFiles - files.length);
 
-      if (validFiles.length === 0) return;
+      if (imageFiles.length === 0) return;
 
-      const newPreviews = validFiles.map((file) => URL.createObjectURL(file));
-      setPreviews((prev) => [...prev, ...newPreviews]);
-      setFiles((prev) => [...prev, ...validFiles]);
+      setIsCompressing(true);
+      const processedFiles: File[] = [];
+      const newPreviews: string[] = [];
+
+      for (const file of imageFiles) {
+        try {
+          let processedFile = file;
+
+          // Check if file needs compression
+          if (file.size > COMPRESSION_THRESHOLD) {
+            toast.info(`Compressing ${file.name}...`);
+            processedFile = await compressImage(file);
+          }
+
+          // Check if still too large after compression
+          if (processedFile.size > MAX_FILE_SIZE) {
+            toast.error(
+              `${file.name} is too large (${Math.round(processedFile.size / 1024 / 1024)}MB). Maximum size is 50MB. Please resize the image manually.`
+            );
+            continue;
+          }
+
+          processedFiles.push(processedFile);
+          newPreviews.push(URL.createObjectURL(processedFile));
+        } catch (error) {
+          console.error("Error processing file:", error);
+          toast.error(`Failed to process ${file.name}`);
+        }
+      }
+
+      setIsCompressing(false);
+
+      if (processedFiles.length > 0) {
+        setPreviews((prev) => [...prev, ...newPreviews]);
+        setFiles((prev) => [...prev, ...processedFiles]);
+      }
     },
     [files.length, maxFiles]
   );
 
   const handleDrop = useCallback(
-    (e: React.DragEvent) => {
+    async (e: React.DragEvent) => {
       e.preventDefault();
       setIsDragging(false);
-      processFiles(e.dataTransfer.files);
+      await processFiles(e.dataTransfer.files);
     },
     [processFiles]
   );
 
   const handleFileSelect = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      processFiles(e.target.files);
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      await processFiles(e.target.files);
     },
     [processFiles]
   );
@@ -89,7 +188,7 @@ export function PhotoUploader({
           isDragging
             ? "border-primary bg-primary/5"
             : "border-muted-foreground/25 hover:border-muted-foreground/50",
-          files.length >= maxFiles && "opacity-50 pointer-events-none"
+          (files.length >= maxFiles || isCompressing) && "opacity-50 pointer-events-none"
         )}
       >
         <input
@@ -122,7 +221,7 @@ export function PhotoUploader({
             Drag and drop photos here, or click to browse
           </p>
           <p className="text-xs text-muted-foreground mt-1">
-            Upload up to {maxFiles} photos (JPG, PNG, WEBP)
+            Up to {maxFiles} photos, max 50MB each (auto-compressed if larger than 10MB)
           </p>
         </label>
       </div>
@@ -162,10 +261,33 @@ export function PhotoUploader({
 
           <Button
             onClick={handleUpload}
-            disabled={isUploading}
+            disabled={isUploading || isCompressing}
             className="w-full"
           >
-            {isUploading ? (
+            {isCompressing ? (
+              <>
+                <svg
+                  className="animate-spin -ml-1 mr-2 h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+                Compressing...
+              </>
+            ) : isUploading ? (
               <>
                 <svg
                   className="animate-spin -ml-1 mr-2 h-4 w-4"
