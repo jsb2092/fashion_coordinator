@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getOutfitSuggestion } from "@/lib/claude";
+import { checkFeatureAccess } from "@/lib/subscription";
 
 export async function POST(request: NextRequest) {
   const { userId } = await auth();
@@ -10,6 +11,19 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // Check subscription for AI chat access
+    const access = await checkFeatureAccess("aiChat");
+    if (!access.allowed) {
+      return NextResponse.json(
+        {
+          error: "subscription_required",
+          message: access.reason,
+          upgradeRequired: true,
+        },
+        { status: 403 }
+      );
+    }
+
     const person = await prisma.person.findUnique({
       where: { clerkUserId: userId },
     });
@@ -32,11 +46,14 @@ export async function POST(request: NextRequest) {
       },
       select: {
         id: true,
+        name: true,
         category: true,
         subcategory: true,
         colorPrimary: true,
         colorSecondary: true,
         pattern: true,
+        brand: true,
+        material: true,
         formalityLevel: true,
         seasonSuitability: true,
         lastWorn: true,
@@ -82,11 +99,14 @@ export async function POST(request: NextRequest) {
       lastUserMessage,
       wardrobeItems.map((item) => ({
         id: item.id,
+        name: item.name,
         category: item.category,
         subcategory: item.subcategory,
         colorPrimary: item.colorPrimary,
         colorSecondary: item.colorSecondary,
         pattern: item.pattern,
+        brand: item.brand,
+        material: item.material,
         formalityLevel: item.formalityLevel,
         seasonSuitability: item.seasonSuitability.map((s) => s.toString()),
         lastWorn: item.lastWorn,
@@ -115,11 +135,14 @@ export async function POST(request: NextRequest) {
           itemIds: suggestion.itemIds,
           items: suggestedItems.map((item) => ({
             id: item.id,
+            name: item.name,
             category: item.category,
             subcategory: item.subcategory,
             colorPrimary: item.colorPrimary,
             colorSecondary: item.colorSecondary,
             pattern: item.pattern,
+            brand: item.brand,
+            material: item.material,
             photoUrls: item.photoUrls,
           })),
           reasoning: suggestion.reasoning,
@@ -137,11 +160,14 @@ export async function POST(request: NextRequest) {
           .filter((item) => list.itemIds.includes(item.id))
           .map((item) => ({
             id: item.id,
+            name: item.name,
             category: item.category,
             subcategory: item.subcategory,
             colorPrimary: item.colorPrimary,
             colorSecondary: item.colorSecondary,
             pattern: item.pattern,
+            brand: item.brand,
+            material: item.material,
             photoUrls: item.photoUrls,
           })),
       }));

@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { generateCareInstructions, CareInstructions } from "@/lib/claude";
 import prisma from "@/lib/prisma";
+import { checkFeatureAccess, incrementShoeCareUsage } from "@/lib/subscription";
 
 export async function POST(request: NextRequest) {
   const { userId } = await auth();
@@ -26,6 +27,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Person not found" }, { status: 404 });
     }
 
+    // Check subscription for shoe care access (only for generating NEW instructions)
+    // Cached instructions don't count against the limit
+    const cached = await prisma.careInstructionsCache.findUnique({
+      where: {
+        wardrobeItemId_careType: {
+          wardrobeItemId: shoeId,
+          careType,
+        },
+      },
+    });
+
+    // If cache exists and supplies haven't changed since, return cached (doesn't count against limit)
+    if (cached && cached.suppliesModifiedAt >= person.suppliesLastModified) {
+      return NextResponse.json(cached.instructions as unknown as CareInstructions);
+    }
+
+    // No valid cache, check if user can generate new instructions
+    const access = await checkFeatureAccess("shoeCare");
+    if (!access.allowed) {
+      return NextResponse.json(
+        {
+          error: "usage_limit_reached",
+          message: access.reason,
+          usageInfo: access.usageInfo,
+          upgradeRequired: true,
+        },
+        { status: 403 }
+      );
+    }
+
     // Get the shoe
     const shoe = await prisma.wardrobeItem.findFirst({
       where: {
@@ -36,21 +67,6 @@ export async function POST(request: NextRequest) {
 
     if (!shoe) {
       return NextResponse.json({ error: "Shoe not found" }, { status: 404 });
-    }
-
-    // Check cache first
-    const cached = await prisma.careInstructionsCache.findUnique({
-      where: {
-        wardrobeItemId_careType: {
-          wardrobeItemId: shoeId,
-          careType,
-        },
-      },
-    });
-
-    // If cache exists and supplies haven't changed since, return cached
-    if (cached && cached.suppliesModifiedAt >= person.suppliesLastModified) {
-      return NextResponse.json(cached.instructions as unknown as CareInstructions);
     }
 
     // Get all their care supplies (excluding KIT category - we want individual items)
@@ -109,6 +125,11 @@ export async function POST(request: NextRequest) {
         suppliesModifiedAt: person.suppliesLastModified,
       },
     });
+
+    // Increment usage for free tier users (only counts when actually generating new instructions)
+    if (person.subscriptionTier !== "pro") {
+      await incrementShoeCareUsage();
+    }
 
     return NextResponse.json(instructions);
   } catch (error) {

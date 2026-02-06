@@ -93,6 +93,17 @@ model Person {
   // Track when supplies were last modified for cache invalidation
   suppliesLastModified DateTime @default(now())
 
+  // Subscription
+  subscriptionTier     String    @default("free")  // "free" | "pro"
+  stripeCustomerId     String?   @unique
+  stripeSubscriptionId String?   @unique
+  subscriptionStatus   String    @default("inactive") // "active" | "canceled" | "past_due" | "inactive"
+  subscriptionEndDate  DateTime?
+
+  // Usage tracking
+  shoeCareUsageThisMonth Int      @default(0)
+  usageResetDate         DateTime @default(now())
+
   wardrobeItems          WardrobeItem[]
   outfits                Outfit[]
   chatSessions           ChatSession[]
@@ -107,6 +118,8 @@ model WardrobeItem {
 
   photoUrls        String[]
   thumbnailUrl     String?
+
+  name             String?    // User-defined name to distinguish similar items (e.g., "Work pants", "Sunday shoes")
 
   category         String
   subcategory      String?

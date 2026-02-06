@@ -32,6 +32,9 @@ export async function GET() {
     preferences: person.preferences,
     measurements: person.measurements,
     itemCount,
+    subscriptionTier: person.subscriptionTier,
+    subscriptionStatus: person.subscriptionStatus,
+    subscriptionEndDate: person.subscriptionEndDate,
   });
 }
 

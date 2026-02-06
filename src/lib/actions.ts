@@ -131,6 +131,7 @@ export async function updateWardrobeItem(
   id: string,
   data: Partial<{
     photoUrls: string[];
+    name: string | null;
     category: string;
     subcategory: string;
     colorPrimary: string;

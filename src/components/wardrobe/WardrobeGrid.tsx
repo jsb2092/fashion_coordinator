@@ -105,7 +105,12 @@ export function WardrobeGrid({ items }: WardrobeGridProps) {
 
               {/* Details Side */}
               <div className="md:w-1/2 p-6 overflow-y-auto max-h-[50vh] md:max-h-[500px]">
-                <h2 className="text-xl font-semibold mb-1">{selectedItem.category}</h2>
+                <h2 className="text-xl font-semibold mb-1">
+                  {selectedItem.name || selectedItem.category}
+                </h2>
+                {selectedItem.name && (
+                  <p className="text-sm text-muted-foreground">{selectedItem.category}</p>
+                )}
                 {selectedItem.subcategory && (
                   <p className="text-muted-foreground mb-4">{selectedItem.subcategory}</p>
                 )}
@@ -225,6 +230,7 @@ export function WardrobeGrid({ items }: WardrobeGridProps) {
         item={editItem}
         isOpen={!!editItem}
         onClose={() => setEditItem(null)}
+        startInEditMode={true}
       />
     </>
   );

@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,14 +27,32 @@ interface Measurements {
   shoeSize?: string;
 }
 
+interface SubscriptionData {
+  tier: string;
+  status: string;
+  endDate: string | null;
+}
+
 export default function SettingsPage() {
   const { user } = useUser();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [preferences, setPreferences] = useState<Preferences>({});
   const [measurements, setMeasurements] = useState<Measurements>({});
+  const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isResetting, setIsResetting] = useState(false);
+  const [isManagingSubscription, setIsManagingSubscription] = useState(false);
+
+  // Check for success from Stripe checkout
+  useEffect(() => {
+    if (searchParams.get("success") === "true") {
+      toast.success("Welcome to Pro! Your subscription is now active.");
+      // Clear the URL params
+      router.replace("/settings");
+    }
+  }, [searchParams, router]);
 
   useEffect(() => {
     async function loadProfile() {
@@ -43,6 +62,11 @@ export default function SettingsPage() {
           const data = await response.json();
           setPreferences(data.preferences || {});
           setMeasurements(data.measurements || {});
+          setSubscription({
+            tier: data.subscriptionTier || "free",
+            status: data.subscriptionStatus || "inactive",
+            endDate: data.subscriptionEndDate || null,
+          });
         }
       } catch (error) {
         console.error("Failed to load profile:", error);
@@ -255,6 +279,79 @@ export default function SettingsPage() {
             {isSaving ? "Saving..." : "Save Changes"}
           </Button>
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              Subscription
+              {subscription?.tier === "pro" && (
+                <span className="text-xs font-medium bg-primary text-primary-foreground px-2 py-0.5 rounded">
+                  PRO
+                </span>
+              )}
+            </CardTitle>
+            <CardDescription>
+              Manage your Outfit IQ subscription
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {subscription?.tier === "pro" ? (
+              <>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Status</span>
+                    <span className="font-medium capitalize">{subscription.status}</span>
+                  </div>
+                  {subscription.endDate && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">
+                        {subscription.status === "canceled" ? "Access until" : "Next billing date"}
+                      </span>
+                      <span className="font-medium">
+                        {new Date(subscription.endDate).toLocaleDateString()}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    setIsManagingSubscription(true);
+                    try {
+                      const response = await fetch("/api/stripe/portal", {
+                        method: "POST",
+                      });
+                      const data = await response.json();
+                      if (data.url) {
+                        window.location.href = data.url;
+                      } else {
+                        throw new Error("Failed to open portal");
+                      }
+                    } catch (error) {
+                      console.error("Portal error:", error);
+                      toast.error("Failed to open subscription management");
+                    } finally {
+                      setIsManagingSubscription(false);
+                    }
+                  }}
+                  disabled={isManagingSubscription}
+                >
+                  {isManagingSubscription ? "Loading..." : "Manage Subscription"}
+                </Button>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  You&apos;re currently on the Free plan. Upgrade to Pro for unlimited AI chat,
+                  shoe care instructions, and an ad-free experience.
+                </p>
+                <Link href="/pricing">
+                  <Button>Upgrade to Pro</Button>
+                </Link>
+              </>
+            )}
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>

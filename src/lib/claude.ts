@@ -150,11 +150,14 @@ export interface OutfitSuggestion {
 
 interface WardrobeItemSummary {
   id: string;
+  name?: string | null;
   category: string;
   subcategory?: string | null;
   colorPrimary: string;
   colorSecondary?: string | null;
   pattern?: string | null;
+  brand?: string | null;
+  material?: string | null;
   formalityLevel: number;
   seasonSuitability: string[];
   lastWorn?: Date | null;

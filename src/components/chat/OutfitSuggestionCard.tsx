@@ -13,6 +13,7 @@ import {
 
 interface OutfitItem {
   id: string;
+  name?: string | null;
   category: string;
   subcategory?: string | null;
   colorPrimary: string;
@@ -22,6 +23,25 @@ interface OutfitItem {
   material?: string | null;
   photoUrls: string[];
   notes?: string | null;
+}
+
+// Generate a descriptive label for an item to distinguish similar items
+function getItemLabel(item: OutfitItem): string {
+  // If user gave it a name, use that
+  if (item.name) return item.name;
+
+  // Otherwise, try to make a distinctive label
+  // Priority: brand + category, then material + category, then subcategory, then category
+  if (item.brand) {
+    return `${item.brand} ${item.category}`;
+  }
+  if (item.material) {
+    return `${item.material} ${item.category}`;
+  }
+  if (item.subcategory) {
+    return item.subcategory;
+  }
+  return item.category;
 }
 
 interface SuggestedOutfit {
@@ -84,8 +104,8 @@ export function OutfitSuggestionCard({
                     </span>
                   </div>
                 </div>
-                <p className="text-xs text-center mt-1 truncate text-muted-foreground">
-                  {item.category}
+                <p className="text-xs text-center mt-1 truncate text-muted-foreground" title={getItemLabel(item)}>
+                  {getItemLabel(item)}
                 </p>
               </div>
             ))}
@@ -129,7 +149,7 @@ export function OutfitSuggestionCard({
       <Dialog open={!!selectedItem} onOpenChange={(open) => !open && setSelectedItem(null)}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>{selectedItem?.category}</DialogTitle>
+            <DialogTitle>{selectedItem ? getItemLabel(selectedItem) : ""}</DialogTitle>
           </DialogHeader>
           {selectedItem && (
             <div className="space-y-4">

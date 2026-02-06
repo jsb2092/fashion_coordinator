@@ -36,26 +36,28 @@ interface ItemDetailModalProps {
   item: WardrobeItem | null;
   isOpen: boolean;
   onClose: () => void;
+  startInEditMode?: boolean;
 }
 
 export function ItemDetailModal({
   item,
   isOpen,
   onClose,
+  startInEditMode = false,
 }: ItemDetailModalProps) {
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(startInEditMode);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isChangingStatus, setIsChangingStatus] = useState(false);
   const [formData, setFormData] = useState<Partial<WardrobeItem>>({});
   const [photoUrls, setPhotoUrls] = useState<string[] | null>(null);
 
-  // Reset state when item changes
+  // Reset state when item changes or when opening
   useEffect(() => {
-    setIsEditing(false);
+    setIsEditing(startInEditMode);
     setFormData({});
     setPhotoUrls(null);
-  }, [item?.id]);
+  }, [item?.id, startInEditMode]);
 
   if (!item) return null;
 
@@ -160,7 +162,7 @@ export function ItemDetailModal({
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
-            <span>{currentData.category}</span>
+            <span>{currentData.name || currentData.category}</span>
             <div className="flex gap-2">
               {!isEditing ? (
                 <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
@@ -216,6 +218,20 @@ export function ItemDetailModal({
           </TabsList>
 
           <TabsContent value="details" className="space-y-6 mt-4">
+            {/* Name field - helps distinguish similar items */}
+            <div className="space-y-2">
+              <Label>Name (optional)</Label>
+              {isEditing ? (
+                <Input
+                  value={currentData.name || ""}
+                  onChange={(e) => updateField("name", e.target.value || null)}
+                  placeholder="e.g., Work pants, Sunday shoes"
+                />
+              ) : (
+                <p className="text-sm">{currentData.name || <span className="text-muted-foreground">Not set - helps distinguish similar items</span>}</p>
+              )}
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Category</Label>

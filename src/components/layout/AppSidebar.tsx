@@ -6,12 +6,17 @@ import { useTheme } from "next-themes";
 import { UserButton } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { SidebarAd } from "@/components/ads/BannerAd";
+
+interface AppSidebarProps {
+  subscriptionTier?: string;
+}
 
 const navigation = [
   { name: "Wardrobe", href: "/", icon: WardrobeIcon },
   { name: "Outfits", href: "/outfits", icon: OutfitIcon },
   { name: "Shoe Care", href: "/shoe-care", icon: ShoeCareIcon },
-  { name: "Ask Claude", href: "/chat", icon: ChatIcon },
+  { name: "Ask Claude", href: "/chat", icon: ChatIcon, proOnly: true },
   { name: "Import", href: "/import", icon: ImportIcon },
   { name: "Settings", href: "/settings", icon: SettingsIcon },
 ];
@@ -170,15 +175,39 @@ function MoonIcon({ className }: { className?: string }) {
   );
 }
 
-export function AppSidebar() {
+function CrownIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={1.5}
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 3l2.5 5 5.5 1-4 4 1 5.5L12 16l-5 2.5 1-5.5-4-4 5.5-1L12 3z"
+      />
+    </svg>
+  );
+}
+
+export function AppSidebar({ subscriptionTier = "free" }: AppSidebarProps) {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
+  const isPro = subscriptionTier === "pro";
 
   return (
     <div className="flex h-full w-64 flex-col border-r bg-background">
       <div className="flex h-16 items-center border-b px-6">
         <Link href="/" className="flex items-center gap-2">
           <span className="text-xl font-semibold">Outfit IQ</span>
+          {isPro && (
+            <span className="text-xs font-medium bg-primary text-primary-foreground px-1.5 py-0.5 rounded">
+              PRO
+            </span>
+          )}
         </Link>
       </div>
       <nav className="flex-1 space-y-1 p-4">
@@ -199,11 +228,29 @@ export function AppSidebar() {
             >
               <item.icon className="h-5 w-5" />
               {item.name}
+              {item.proOnly && !isPro && (
+                <span className="ml-auto text-xs bg-muted px-1.5 py-0.5 rounded">
+                  Pro
+                </span>
+              )}
             </Link>
           );
         })}
       </nav>
+      {!isPro && (
+        <div className="px-4 pb-2">
+          <SidebarAd />
+        </div>
+      )}
       <div className="border-t p-4 space-y-3">
+        {!isPro && (
+          <Link href="/pricing">
+            <Button variant="outline" size="sm" className="w-full gap-2">
+              <CrownIcon className="h-4 w-4" />
+              Upgrade to Pro
+            </Button>
+          </Link>
+        )}
         <div className="flex items-center justify-between">
           <span className="text-sm text-muted-foreground">Theme</span>
           <Button
