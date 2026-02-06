@@ -167,7 +167,7 @@ const DEMO_ITEMS: Array<{
   // Shoes
   {
     name: "Brown Oxford Brogues",
-    category: "Shoes",
+    category: "Dress Shoes",
     subcategory: "Oxford",
     colorPrimary: "Brown",
     pattern: "Brogue",
@@ -179,7 +179,7 @@ const DEMO_ITEMS: Array<{
   },
   {
     name: "Black Chelsea Boots",
-    category: "Shoes",
+    category: "Boots",
     subcategory: "Chelsea Boot",
     colorPrimary: "Black",
     pattern: "Solid",
@@ -191,7 +191,7 @@ const DEMO_ITEMS: Array<{
   },
   {
     name: "White Leather Sneakers",
-    category: "Shoes",
+    category: "Casual Shoes",
     subcategory: "Sneakers",
     colorPrimary: "White",
     pattern: "Solid",
@@ -203,7 +203,7 @@ const DEMO_ITEMS: Array<{
   },
   {
     name: "Brown Loafers",
-    category: "Shoes",
+    category: "Dress Shoes",
     subcategory: "Loafer",
     colorPrimary: "Brown",
     pattern: "Solid",
@@ -415,6 +415,27 @@ export async function seedDemoAccount() {
     console.log("[Demo Seed] Created", created.count, "missing wardrobe items");
   } else {
     console.log("[Demo Seed] All wardrobe items already exist");
+  }
+
+  // Fix shoe categories for existing items (migrate from "Shoes" to specific categories)
+  const shoeFixMap: Record<string, string> = {
+    "Brown Oxford Brogues": "Dress Shoes",
+    "Black Chelsea Boots": "Boots",
+    "White Leather Sneakers": "Casual Shoes",
+    "Brown Loafers": "Dress Shoes",
+  };
+
+  for (const [name, correctCategory] of Object.entries(shoeFixMap)) {
+    const item = await prisma.wardrobeItem.findFirst({
+      where: { personId: person.id, name },
+    });
+    if (item && item.category !== correctCategory) {
+      await prisma.wardrobeItem.update({
+        where: { id: item.id },
+        data: { category: correctCategory },
+      });
+      console.log(`[Demo Seed] Fixed category for ${name}: ${item.category} -> ${correctCategory}`);
+    }
   }
 
   // Check for missing care supplies and add them
