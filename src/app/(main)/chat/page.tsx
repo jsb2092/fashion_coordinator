@@ -15,6 +15,7 @@ import {
 } from "@/lib/actions";
 import { toast } from "sonner";
 import { OutfitSuggestionCard } from "@/components/chat/OutfitSuggestionCard";
+import Link from "next/link";
 
 interface OutfitItem {
   id: string;
@@ -72,6 +73,7 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Load chat sessions on mount
@@ -189,11 +191,15 @@ export default function ChatPage() {
         }),
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to get response");
-      }
-
       const data = await response.json();
+
+      if (!response.ok) {
+        if (data.error === "subscription_required") {
+          setShowUpgradePrompt(true);
+          return;
+        }
+        throw new Error(data.message || "Failed to get response");
+      }
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -513,17 +519,40 @@ export default function ChatPage() {
           </div>
         </ScrollArea>
 
+        {showUpgradePrompt && (
+          <div className="border-t bg-gradient-to-r from-amber-500/10 to-orange-500/10 p-6">
+            <div className="max-w-3xl mx-auto flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="font-semibold">AI Chat is a Pro Feature</p>
+                  <p className="text-sm text-muted-foreground">Upgrade to Pro to get personalized outfit suggestions from Claude.</p>
+                </div>
+              </div>
+              <Link href="/pricing">
+                <Button className="bg-amber-600 hover:bg-amber-700">
+                  Upgrade to Pro
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )}
+
         <div className="border-t p-4">
           <form onSubmit={handleSubmit} className="max-w-3xl mx-auto flex gap-2">
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask about outfit suggestions..."
+              placeholder={showUpgradePrompt ? "Upgrade to Pro to use AI chat..." : "Ask about outfit suggestions..."}
               className="min-h-[60px] resize-none"
-              disabled={isLoading}
+              disabled={isLoading || showUpgradePrompt}
             />
-            <Button type="submit" disabled={isLoading || !input.trim()}>
+            <Button type="submit" disabled={isLoading || showUpgradePrompt || !input.trim()}>
               <svg
                 className="w-4 h-4"
                 fill="none"
