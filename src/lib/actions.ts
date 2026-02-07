@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import prisma from "./prisma";
 import { revalidatePath } from "next/cache";
 
@@ -8,14 +8,26 @@ export async function getOrCreatePerson() {
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthorized");
 
+  // Get user details from Clerk
+  const clerkUser = await currentUser();
+  const name = clerkUser?.firstName
+    ? `${clerkUser.firstName}${clerkUser.lastName ? ` ${clerkUser.lastName}` : ""}`
+    : "User";
+  const email = clerkUser?.primaryEmailAddress?.emailAddress || null;
+
   // Use upsert to avoid race conditions when multiple requests
   // come in simultaneously for a new user
   const person = await prisma.person.upsert({
     where: { clerkUserId: userId },
-    update: {}, // Don't update anything if exists
+    update: {
+      // Update name/email if they were missing or changed
+      name,
+      email,
+    },
     create: {
       clerkUserId: userId,
-      name: "User",
+      name,
+      email,
     },
   });
 
