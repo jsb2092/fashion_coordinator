@@ -1,8 +1,62 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
 });
+
+// S3 client for fetching images directly
+const s3Client = new S3Client({
+  endpoint: process.env.AWS_ENDPOINT_URL_S3,
+  region: process.env.AWS_REGION || "us-east-1",
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+  },
+  forcePathStyle: true,
+});
+
+// Helper to fetch image from S3 and convert to base64
+async function fetchImageFromS3(imageUrl: string): Promise<{ base64: string; mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp" } | null> {
+  try {
+    // Extract S3 key from URL like /api/upload/image/wardrobe%2Fuser%2Ffile.jpeg
+    const match = imageUrl.match(/\/api\/upload\/image\/(.+)$/);
+    if (!match) {
+      console.error("Could not extract S3 key from URL:", imageUrl);
+      return null;
+    }
+
+    // Decode the URL-encoded key
+    const s3Key = decodeURIComponent(match[1]);
+
+    const command = new GetObjectCommand({
+      Bucket: process.env.AWS_S3_BUCKET_NAME!,
+      Key: s3Key,
+    });
+
+    const response = await s3Client.send(command);
+
+    if (!response.Body) {
+      console.error("No body in S3 response for key:", s3Key);
+      return null;
+    }
+
+    const arrayBuffer = await response.Body.transformToByteArray();
+    const base64 = Buffer.from(arrayBuffer).toString("base64");
+
+    // Determine media type
+    const contentType = response.ContentType || "image/jpeg";
+    let mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp" = "image/jpeg";
+    if (contentType.includes("png")) mediaType = "image/png";
+    else if (contentType.includes("gif")) mediaType = "image/gif";
+    else if (contentType.includes("webp")) mediaType = "image/webp";
+
+    return { base64, mediaType };
+  } catch (error) {
+    console.error("Failed to fetch image from S3:", imageUrl, error);
+    return null;
+  }
+}
 
 export const CATEGORIES = [
   "Suits",
@@ -363,32 +417,6 @@ If you can't analyze the image (not an outfit, unclear, etc.), return:
   "fitCheck": null
 }`;
 
-  // Helper to fetch image and convert to base64
-  async function fetchImageAsBase64(url: string): Promise<{ base64: string; mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp" }> {
-    // Convert relative URLs to absolute URLs
-    let fullUrl = url;
-    if (url.startsWith("/")) {
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL || "https://outfit-iq.com";
-      fullUrl = `${baseUrl.startsWith("http") ? baseUrl : `https://${baseUrl}`}${url}`;
-    }
-
-    const response = await fetch(fullUrl);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch image: ${response.status}`);
-    }
-    const arrayBuffer = await response.arrayBuffer();
-    const base64 = Buffer.from(arrayBuffer).toString("base64");
-
-    // Determine media type from content-type header or default to jpeg
-    const contentType = response.headers.get("content-type") || "image/jpeg";
-    let mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp" = "image/jpeg";
-    if (contentType.includes("png")) mediaType = "image/png";
-    else if (contentType.includes("gif")) mediaType = "image/gif";
-    else if (contentType.includes("webp")) mediaType = "image/webp";
-
-    return { base64, mediaType };
-  }
-
   // Build content array with images and text
   type MediaType = "image/jpeg" | "image/png" | "image/gif" | "image/webp";
   type ContentBlock =
@@ -397,17 +425,14 @@ If you can't analyze the image (not an outfit, unclear, etc.), return:
 
   const content: ContentBlock[] = [];
 
-  // Fetch and add images as base64
+  // Fetch images directly from S3 and add as base64
   for (const url of imageUrls) {
-    try {
-      const { base64, mediaType } = await fetchImageAsBase64(url);
+    const imageData = await fetchImageFromS3(url);
+    if (imageData) {
       content.push({
         type: "image",
-        source: { type: "base64", media_type: mediaType, data: base64 },
+        source: { type: "base64", media_type: imageData.mediaType, data: imageData.base64 },
       });
-    } catch (error) {
-      console.error("Failed to fetch image:", url, error);
-      // Skip this image if we can't fetch it
     }
   }
 
