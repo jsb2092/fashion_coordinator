@@ -17,7 +17,8 @@ export async function GET(
 ) {
   try {
     const { key } = await params;
-    const objectKey = key.join("/");
+    // Decode URL-encoded path segments (e.g., %2F -> /)
+    const objectKey = decodeURIComponent(key.join("/"));
 
     const command = new GetObjectCommand({
       Bucket: process.env.AWS_S3_BUCKET_NAME!,
