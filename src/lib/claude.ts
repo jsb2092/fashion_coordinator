@@ -365,7 +365,14 @@ If you can't analyze the image (not an outfit, unclear, etc.), return:
 
   // Helper to fetch image and convert to base64
   async function fetchImageAsBase64(url: string): Promise<{ base64: string; mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp" }> {
-    const response = await fetch(url);
+    // Convert relative URLs to absolute URLs
+    let fullUrl = url;
+    if (url.startsWith("/")) {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL || "https://outfit-iq.com";
+      fullUrl = `${baseUrl.startsWith("http") ? baseUrl : `https://${baseUrl}`}${url}`;
+    }
+
+    const response = await fetch(fullUrl);
     if (!response.ok) {
       throw new Error(`Failed to fetch image: ${response.status}`);
     }
