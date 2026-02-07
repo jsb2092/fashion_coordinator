@@ -257,14 +257,20 @@ export function AppSidebar({ subscriptionTier = "free" }: AppSidebarProps) {
             <span className="sr-only">Toggle theme</span>
           </Button>
         </div>
-        <div className="flex items-center gap-3">
+        <div
+          className="flex items-center gap-3 cursor-pointer group"
+          onClick={(e) => {
+            // Find and click the UserButton if clicking on the text area
+            const userButton = e.currentTarget.querySelector('button');
+            if (userButton && e.target !== userButton) {
+              userButton.click();
+            }
+          }}
+        >
           <UserButton afterSignOutUrl="/sign-in" />
-          <Link
-            href="/settings"
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
+          <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
             Account
-          </Link>
+          </span>
         </div>
       </div>
     </div>
