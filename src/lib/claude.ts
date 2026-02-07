@@ -363,19 +363,52 @@ If you can't analyze the image (not an outfit, unclear, etc.), return:
   "fitCheck": null
 }`;
 
+  // Helper to fetch image and convert to base64
+  async function fetchImageAsBase64(url: string): Promise<{ base64: string; mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp" }> {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch image: ${response.status}`);
+    }
+    const arrayBuffer = await response.arrayBuffer();
+    const base64 = Buffer.from(arrayBuffer).toString("base64");
+
+    // Determine media type from content-type header or default to jpeg
+    const contentType = response.headers.get("content-type") || "image/jpeg";
+    let mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp" = "image/jpeg";
+    if (contentType.includes("png")) mediaType = "image/png";
+    else if (contentType.includes("gif")) mediaType = "image/gif";
+    else if (contentType.includes("webp")) mediaType = "image/webp";
+
+    return { base64, mediaType };
+  }
+
   // Build content array with images and text
+  type MediaType = "image/jpeg" | "image/png" | "image/gif" | "image/webp";
   type ContentBlock =
-    | { type: "image"; source: { type: "url"; url: string } }
+    | { type: "image"; source: { type: "base64"; media_type: MediaType; data: string } }
     | { type: "text"; text: string };
 
   const content: ContentBlock[] = [];
 
-  // Add images
+  // Fetch and add images as base64
   for (const url of imageUrls) {
-    content.push({
-      type: "image",
-      source: { type: "url", url },
-    });
+    try {
+      const { base64, mediaType } = await fetchImageAsBase64(url);
+      content.push({
+        type: "image",
+        source: { type: "base64", media_type: mediaType, data: base64 },
+      });
+    } catch (error) {
+      console.error("Failed to fetch image:", url, error);
+      // Skip this image if we can't fetch it
+    }
+  }
+
+  // If no images were successfully fetched, return error
+  if (content.length === 0) {
+    return {
+      content: "I couldn't load the image(s). Please try uploading again.",
+    };
   }
 
   // Add conversation context
