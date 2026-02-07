@@ -1,7 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getOutfitSuggestion } from "@/lib/claude";
+import { getOutfitSuggestion, analyzeFitCheck } from "@/lib/claude";
 import { checkFeatureAccess } from "@/lib/subscription";
 
 export async function POST(request: NextRequest) {
@@ -32,10 +32,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const { messages } = await request.json();
-    const lastUserMessage = messages[messages.length - 1]?.content;
+    const { messages, imageUrls } = await request.json();
+    const lastMessage = messages[messages.length - 1];
+    const lastUserMessage = lastMessage?.content;
+    const lastMessageImages = imageUrls || lastMessage?.imageUrls || [];
 
-    if (!lastUserMessage) {
+    if (!lastUserMessage && lastMessageImages.length === 0) {
       return NextResponse.json({ error: "No message provided" }, { status: 400 });
     }
 
@@ -90,10 +92,41 @@ export async function POST(request: NextRequest) {
     }));
 
     // Build conversation history (exclude the current message)
-    const conversationHistory = messages.slice(0, -1).map((m: { role: string; content: string }) => ({
+    const conversationHistory = messages.slice(0, -1).map((m: { role: string; content: string; imageUrls?: string[] }) => ({
       role: m.role as "user" | "assistant",
       content: m.content,
+      imageUrls: m.imageUrls,
     }));
+
+    // If user sent images, do a fit check analysis
+    if (lastMessageImages.length > 0) {
+      const fitCheckResult = await analyzeFitCheck(
+        lastMessageImages,
+        lastUserMessage || "Please analyze this outfit",
+        wardrobeItems.map((item) => ({
+          id: item.id,
+          name: item.name,
+          category: item.category,
+          subcategory: item.subcategory,
+          colorPrimary: item.colorPrimary,
+          colorSecondary: item.colorSecondary,
+          pattern: item.pattern,
+          brand: item.brand,
+          material: item.material,
+          formalityLevel: item.formalityLevel,
+          seasonSuitability: item.seasonSuitability.map((s) => s.toString()),
+          lastWorn: item.lastWorn,
+          timesWorn: item.timesWorn,
+        })),
+        conversationHistory
+      );
+
+      return NextResponse.json({
+        content: fitCheckResult.content,
+        fitCheck: fitCheckResult.fitCheck,
+        imageUrls: lastMessageImages,
+      });
+    }
 
     const suggestion = await getOutfitSuggestion(
       lastUserMessage,

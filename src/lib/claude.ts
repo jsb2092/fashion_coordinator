@@ -180,6 +180,7 @@ interface OutfitHistory {
 interface ConversationMessage {
   role: "user" | "assistant";
   content: string;
+  imageUrls?: string[];
 }
 
 export async function getOutfitSuggestion(
@@ -282,6 +283,147 @@ ${JSON.stringify(recentOutfits.slice(0, 5), null, 2)}
   }
 
   return JSON.parse(jsonMatch[0]) as OutfitSuggestion;
+}
+
+// Fit Check with image analysis
+export interface FitCheckResponse {
+  overallScore: number; // 1-10
+  overallVerdict: string;
+  colorHarmony: {
+    score: number;
+    feedback: string;
+  };
+  formalityBalance: {
+    score: number;
+    feedback: string;
+  };
+  fit: {
+    score: number;
+    feedback: string;
+  };
+  proportions: {
+    score: number;
+    feedback: string;
+  };
+  suggestions: string[];
+  compliments: string[];
+}
+
+export async function analyzeFitCheck(
+  imageUrls: string[],
+  userMessage: string,
+  wardrobeItems: WardrobeItemSummary[],
+  conversationHistory: ConversationMessage[] = []
+): Promise<{ content: string; fitCheck?: FitCheckResponse }> {
+  const systemPrompt = `You are a personal fashion stylist reviewing a user's outfit photo(s) for a "fit check".
+
+You have access to their wardrobe which may help identify specific items they're wearing.
+
+WARDROBE (for reference):
+${JSON.stringify(wardrobeItems.slice(0, 30), null, 2)}
+
+Analyze the outfit in the photo(s) and provide:
+1. An overall assessment with specific, actionable feedback
+2. Structured scores and feedback for key aspects
+
+Be honest but kind - point out what works well AND what could be improved. Be specific about colors, fits, and proportions you observe.
+
+If the image is not an outfit photo (e.g., a random object), politely let the user know you need a photo of them wearing clothes.
+
+Return a JSON object with:
+{
+  "content": "Your conversational response to the user (2-4 sentences summarizing the fit check)",
+  "fitCheck": {
+    "overallScore": 1-10,
+    "overallVerdict": "Great outfit!" or "Good foundation, some tweaks would help" etc.,
+    "colorHarmony": {
+      "score": 1-10,
+      "feedback": "specific feedback about color choices and combinations"
+    },
+    "formalityBalance": {
+      "score": 1-10,
+      "feedback": "do the pieces work together in terms of formality?"
+    },
+    "fit": {
+      "score": 1-10,
+      "feedback": "how well do the clothes fit the body?"
+    },
+    "proportions": {
+      "score": 1-10,
+      "feedback": "visual balance, length ratios, etc."
+    },
+    "suggestions": ["specific actionable suggestions to improve the look"],
+    "compliments": ["specific things that are working well"]
+  }
+}
+
+If you can't analyze the image (not an outfit, unclear, etc.), return:
+{
+  "content": "your response explaining the issue",
+  "fitCheck": null
+}`;
+
+  // Build content array with images and text
+  type ContentBlock =
+    | { type: "image"; source: { type: "url"; url: string } }
+    | { type: "text"; text: string };
+
+  const content: ContentBlock[] = [];
+
+  // Add images
+  for (const url of imageUrls) {
+    content.push({
+      type: "image",
+      source: { type: "url", url },
+    });
+  }
+
+  // Add conversation context
+  const prevContext = conversationHistory
+    .filter((m) => m.role === "user")
+    .map((m) => m.content)
+    .join("\n");
+
+  const contextNote = prevContext
+    ? `\n\nPrevious conversation context:\n${prevContext}\n\n`
+    : "";
+
+  // Add user message
+  content.push({
+    type: "text",
+    text: `${contextNote}User's message: ${userMessage}\n\nProvide a fit check analysis. Return only valid JSON.`,
+  });
+
+  const response = await anthropic.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 2048,
+    system: systemPrompt,
+    messages: [{ role: "user", content }],
+  });
+
+  const text =
+    response.content[0].type === "text" ? response.content[0].text : "";
+
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    return {
+      content:
+        "I had trouble analyzing your outfit. Could you try sending another photo?",
+    };
+  }
+
+  try {
+    const result = JSON.parse(jsonMatch[0]);
+    return {
+      content: result.content,
+      fitCheck: result.fitCheck || undefined,
+    };
+  } catch {
+    return {
+      content:
+        "I had trouble analyzing your outfit. Could you try sending another photo?",
+    };
+  }
 }
 
 // Shoe Care Supply Analysis

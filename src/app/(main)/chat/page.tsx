@@ -44,12 +44,25 @@ interface ItemList {
   items: OutfitItem[];
 }
 
+interface FitCheck {
+  overallScore: number;
+  overallVerdict: string;
+  colorHarmony: { score: number; feedback: string };
+  formalityBalance: { score: number; feedback: string };
+  fit: { score: number; feedback: string };
+  proportions: { score: number; feedback: string };
+  suggestions: string[];
+  compliments: string[];
+}
+
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
   suggestedOutfit?: SuggestedOutfit;
   itemLists?: ItemList[];
+  imageUrls?: string[];
+  fitCheck?: FitCheck;
 }
 
 interface ChatSession {
@@ -63,7 +76,7 @@ const WELCOME_MESSAGE: Message = {
   id: "welcome",
   role: "assistant",
   content:
-    "Hi! I'm here to help you put together great outfits. Tell me about an occasion, event, or how you want to look, and I'll suggest outfit combinations from your wardrobe. For example:\n\n• \"What should I wear to a nice dinner?\"\n• \"I have a job interview tomorrow\"\n• \"Casual outfit for a weekend brunch\"\n\nWhat can I help you with?",
+    "Hi! I'm here to help you put together great outfits. Tell me about an occasion, event, or how you want to look, and I'll suggest outfit combinations from your wardrobe. For example:\n\n• \"What should I wear to a nice dinner?\"\n• \"I have a job interview tomorrow\"\n• \"Casual outfit for a weekend brunch\"\n\nYou can also attach a photo for a **fit check** - I'll analyze your outfit and give you feedback on colors, fit, and styling!\n\nWhat can I help you with?",
 };
 
 export default function ChatPage() {
@@ -74,7 +87,11 @@ export default function ChatPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  const [pendingImages, setPendingImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load chat sessions on mount
   useEffect(() => {
@@ -145,7 +162,7 @@ export default function ChatPage() {
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!input.trim() || isLoading) return;
+    if ((!input.trim() && pendingImages.length === 0) || isLoading || isUploading) return;
 
     // Create session if needed
     let sessionId = currentSessionId;
@@ -162,14 +179,34 @@ export default function ChatPage() {
       }
     }
 
+    // Upload images if any
+    let uploadedImageUrls: string[] = [];
+    if (pendingImages.length > 0) {
+      setIsUploading(true);
+      try {
+        uploadedImageUrls = await uploadImages(pendingImages);
+      } catch (error) {
+        console.error("Failed to upload images:", error);
+        toast.error("Failed to upload images");
+        setIsUploading(false);
+        return;
+      }
+      setIsUploading(false);
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
-      content: input.trim(),
+      content: input.trim() || "Please check this outfit",
+      imageUrls: uploadedImageUrls.length > 0 ? uploadedImageUrls : undefined,
     };
 
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
+    setPendingImages([]);
+    // Clean up preview URLs
+    imagePreviews.forEach((url) => URL.revokeObjectURL(url));
+    setImagePreviews([]);
     setIsLoading(true);
 
     // Save user message
@@ -187,7 +224,9 @@ export default function ChatPage() {
           messages: [...messages, userMessage].map((m) => ({
             role: m.role,
             content: m.content,
+            imageUrls: m.imageUrls,
           })),
+          imageUrls: uploadedImageUrls.length > 0 ? uploadedImageUrls : undefined,
         }),
       });
 
@@ -207,6 +246,7 @@ export default function ChatPage() {
         content: data.content,
         suggestedOutfit: data.suggestedOutfit,
         itemLists: data.itemLists,
+        fitCheck: data.fitCheck,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -253,6 +293,54 @@ export default function ChatPage() {
   const handleRequestReplacement = (item: OutfitItem, reason: string) => {
     const replacementMessage = `Please replace the ${item.category} (${item.colorPrimary}${item.brand ? `, ${item.brand}` : ""}) in this outfit. ${reason}. Suggest an alternative from my wardrobe.`;
     setInput(replacementMessage);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const imageFiles = Array.from(files)
+      .filter((file) => file.type.startsWith("image/"))
+      .slice(0, 3); // Max 3 images
+
+    if (imageFiles.length > 0) {
+      // Create previews
+      const previews = imageFiles.map((file) => URL.createObjectURL(file));
+      setImagePreviews((prev) => [...prev, ...previews].slice(0, 3));
+      setPendingImages((prev) => [...prev, ...imageFiles].slice(0, 3));
+    }
+
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const removeImage = (index: number) => {
+    URL.revokeObjectURL(imagePreviews[index]);
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+    setPendingImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadImages = async (files: File[]): Promise<string[]> => {
+    const urls: string[] = [];
+    for (const file of files) {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to upload image");
+      }
+
+      const { url } = await res.json();
+      urls.push(url);
+    }
+    return urls;
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -411,6 +499,19 @@ export default function ChatPage() {
                     message.role === "user" ? "items-end" : "items-start"
                   )}
                 >
+                  {/* User's attached images */}
+                  {message.role === "user" && message.imageUrls && message.imageUrls.length > 0 && (
+                    <div className="flex gap-2 justify-end">
+                      {message.imageUrls.map((url, i) => (
+                        <img
+                          key={i}
+                          src={url}
+                          alt={`Attached ${i + 1}`}
+                          className="w-24 h-24 object-cover rounded-lg border"
+                        />
+                      ))}
+                    </div>
+                  )}
                   <div
                     className={cn(
                       "rounded-lg px-4 py-2",
@@ -461,6 +562,69 @@ export default function ChatPage() {
                           </div>
                         </div>
                       ))}
+                    </div>
+                  )}
+
+                  {/* Fit Check Results */}
+                  {message.fitCheck && (
+                    <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-lg p-4 w-full border border-purple-200/50">
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="font-semibold flex items-center gap-2">
+                          <svg className="w-5 h-5 text-purple-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          Fit Check
+                        </h4>
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl font-bold text-purple-600">
+                            {message.fitCheck.overallScore}/10
+                          </span>
+                        </div>
+                      </div>
+                      <p className="text-sm font-medium mb-3">{message.fitCheck.overallVerdict}</p>
+
+                      <div className="grid grid-cols-2 gap-3 mb-4">
+                        {[
+                          { label: "Colors", data: message.fitCheck.colorHarmony },
+                          { label: "Formality", data: message.fitCheck.formalityBalance },
+                          { label: "Fit", data: message.fitCheck.fit },
+                          { label: "Proportions", data: message.fitCheck.proportions },
+                        ].map((item) => (
+                          <div key={item.label} className="bg-background/50 rounded-md p-2">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs font-medium">{item.label}</span>
+                              <span className="text-xs font-semibold">{item.data.score}/10</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">{item.data.feedback}</p>
+                          </div>
+                        ))}
+                      </div>
+
+                      {message.fitCheck.compliments.length > 0 && (
+                        <div className="mb-3">
+                          <p className="text-xs font-medium text-green-600 mb-1">What&apos;s working:</p>
+                          <ul className="text-xs text-muted-foreground space-y-1">
+                            {message.fitCheck.compliments.map((c, i) => (
+                              <li key={i} className="flex items-start gap-1">
+                                <span className="text-green-500">✓</span> {c}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {message.fitCheck.suggestions.length > 0 && (
+                        <div>
+                          <p className="text-xs font-medium text-amber-600 mb-1">Suggestions:</p>
+                          <ul className="text-xs text-muted-foreground space-y-1">
+                            {message.fitCheck.suggestions.map((s, i) => (
+                              <li key={i} className="flex items-start gap-1">
+                                <span className="text-amber-500">→</span> {s}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -543,31 +707,104 @@ export default function ChatPage() {
         )}
 
         <div className="border-t p-4">
-          <form onSubmit={handleSubmit} className="max-w-3xl mx-auto flex gap-2">
-            <Textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={showUpgradePrompt ? "Upgrade to Pro to use AI chat..." : "Ask about outfit suggestions..."}
-              className="min-h-[60px] resize-none"
-              disabled={isLoading || showUpgradePrompt}
-            />
-            <Button type="submit" disabled={isLoading || showUpgradePrompt || !input.trim()}>
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2}
-                stroke="currentColor"
+          <div className="max-w-3xl mx-auto space-y-3">
+            {/* Image previews */}
+            {imagePreviews.length > 0 && (
+              <div className="flex gap-2">
+                {imagePreviews.map((preview, index) => (
+                  <div key={preview} className="relative group">
+                    <img
+                      src={preview}
+                      alt={`Preview ${index + 1}`}
+                      className="w-16 h-16 object-cover rounded-lg border"
+                    />
+                    <button
+                      onClick={() => removeImage(index)}
+                      className="absolute -top-2 -right-2 p-1 rounded-full bg-destructive text-destructive-foreground shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                      type="button"
+                    >
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="flex gap-2">
+              {/* Hidden file input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleFileSelect}
+                className="hidden"
+                disabled={isLoading || showUpgradePrompt || pendingImages.length >= 3}
+              />
+
+              {/* Photo upload button */}
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isLoading || isUploading || showUpgradePrompt || pendingImages.length >= 3}
+                title="Attach photos for a fit check"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"
-                />
-              </svg>
-            </Button>
-          </form>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+                </svg>
+              </Button>
+
+              <Textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={
+                  showUpgradePrompt
+                    ? "Upgrade to Pro to use AI chat..."
+                    : pendingImages.length > 0
+                    ? "Ask about this outfit (or just send to get a fit check)..."
+                    : "Ask about outfit suggestions, or attach a photo for a fit check..."
+                }
+                className="min-h-[60px] resize-none flex-1"
+                disabled={isLoading || isUploading || showUpgradePrompt}
+              />
+              <Button
+                type="submit"
+                disabled={isLoading || isUploading || showUpgradePrompt || (!input.trim() && pendingImages.length === 0)}
+              >
+                {isUploading ? (
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                ) : (
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={2}
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"
+                    />
+                  </svg>
+                )}
+              </Button>
+            </form>
+            {pendingImages.length > 0 && (
+              <p className="text-xs text-muted-foreground text-center">
+                {pendingImages.length}/3 photos attached
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </div>
