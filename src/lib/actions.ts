@@ -8,18 +8,16 @@ export async function getOrCreatePerson() {
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthorized");
 
-  let person = await prisma.person.findUnique({
+  // Use upsert to avoid race conditions when multiple requests
+  // come in simultaneously for a new user
+  const person = await prisma.person.upsert({
     where: { clerkUserId: userId },
+    update: {}, // Don't update anything if exists
+    create: {
+      clerkUserId: userId,
+      name: "User",
+    },
   });
-
-  if (!person) {
-    person = await prisma.person.create({
-      data: {
-        clerkUserId: userId,
-        name: "User",
-      },
-    });
-  }
 
   return person;
 }
