@@ -129,3 +129,46 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Clerk component theming - follows app's light/dark mode */
+.cl-rootBox,
+.cl-card,
+.cl-userButtonPopoverCard,
+.cl-userButtonPopoverActions,
+.cl-userPreviewMainIdentifier,
+.cl-userPreviewSecondaryIdentifier,
+.cl-modalContent {
+  --cl-background: var(--background);
+  --cl-foreground: var(--foreground);
+  background-color: oklch(var(--card) / 1) !important;
+  color: oklch(var(--card-foreground) / 1) !important;
+}
+
+:root .cl-userButtonPopoverCard,
+:root .cl-modalContent {
+  background-color: white !important;
+  border: 1px solid oklch(0.922 0 0) !important;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1) !important;
+}
+
+.dark .cl-userButtonPopoverCard,
+.dark .cl-modalContent {
+  background-color: oklch(0.22 0.01 60) !important;
+  border: 1px solid oklch(0.35 0.01 60) !important;
+}
+
+.cl-userButtonPopoverActionButton {
+  color: inherit !important;
+}
+
+.cl-userButtonPopoverActionButton:hover {
+  background-color: oklch(var(--muted) / 1) !important;
+}
+
+.dark .cl-userButtonPopoverActionButton:hover {
+  background-color: oklch(0.28 0.01 60) !important;
+}
+
+.cl-userButtonPopoverFooter {
+  display: none !important;
+}
