@@ -267,7 +267,28 @@ export function AppSidebar({ subscriptionTier = "free" }: AppSidebarProps) {
             }
           }}
         >
-          <UserButton afterSignOutUrl="/sign-in" />
+          <UserButton
+            afterSignOutUrl="/sign-in"
+            appearance={{
+              elements: {
+                avatarBox: "h-8 w-8",
+                userButtonPopoverCard: "border shadow-lg rounded-lg",
+                userButtonPopoverActionButton:
+                  "hover:bg-muted text-foreground",
+                userButtonPopoverActionButtonText: "text-sm",
+                userButtonPopoverActionButtonIcon: "h-4 w-4",
+                userButtonPopoverFooter: "hidden",
+              },
+              variables: {
+                colorBackground: "hsl(var(--background))",
+                colorText: "hsl(var(--foreground))",
+                colorTextSecondary: "hsl(var(--muted-foreground))",
+                colorPrimary: "hsl(var(--primary))",
+                colorDanger: "hsl(var(--destructive))",
+                borderRadius: "var(--radius)",
+              },
+            }}
+          />
           <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
             Account
           </span>
