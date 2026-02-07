@@ -259,7 +259,12 @@ export function AppSidebar({ subscriptionTier = "free" }: AppSidebarProps) {
         </div>
         <div className="flex items-center gap-3">
           <UserButton afterSignOutUrl="/sign-in" />
-          <span className="text-sm text-muted-foreground">Account</span>
+          <Link
+            href="/settings"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Account
+          </Link>
         </div>
       </div>
     </div>
