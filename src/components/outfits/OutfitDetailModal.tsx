@@ -25,6 +25,67 @@ import { OCCASION_TYPES, FORMALITY_LEVELS } from "@/constants/categories";
 import { deleteOutfit, updateOutfit, getWardrobeItems } from "@/lib/actions";
 import { toast } from "sonner";
 
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+const COMPRESSION_THRESHOLD = 10 * 1024 * 1024; // 10MB
+
+async function compressImage(file: File, maxSizeMB: number = 10): Promise<File> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      let { width, height } = img;
+      const maxDim = 2000;
+      if (width > maxDim || height > maxDim) {
+        if (width > height) {
+          height = (height / width) * maxDim;
+          width = maxDim;
+        } else {
+          width = (width / height) * maxDim;
+          height = maxDim;
+        }
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        reject(new Error("Could not get canvas context"));
+        return;
+      }
+
+      ctx.drawImage(img, 0, 0, width, height);
+
+      let quality = 0.9;
+      const tryCompress = () => {
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              reject(new Error("Could not compress image"));
+              return;
+            }
+
+            if (blob.size > maxSizeMB * 1024 * 1024 && quality > 0.3) {
+              quality -= 0.1;
+              tryCompress();
+            } else {
+              const compressedFile = new File([blob], file.name, {
+                type: "image/jpeg",
+                lastModified: Date.now(),
+              });
+              resolve(compressedFile);
+            }
+          },
+          "image/jpeg",
+          quality
+        );
+      };
+      tryCompress();
+    };
+    img.onerror = () => reject(new Error("Could not load image"));
+    img.src = URL.createObjectURL(file);
+  });
+}
+
 interface FitCheck {
   overallScore: number;
   overallVerdict: string;
@@ -65,6 +126,7 @@ export function OutfitDetailModal({
   const [verifyPreview, setVerifyPreview] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [fitCheckResult, setFitCheckResult] = useState<FitCheck | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -142,22 +204,66 @@ export function OutfitDetailModal({
     setShowItemPicker(false);
   };
 
-  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const processFile = async (file: File) => {
     if (!file.type.startsWith("image/")) {
       toast.error("Please select an image file");
       return;
     }
 
+    let processedFile = file;
+
+    // Compress if needed
+    if (file.size > COMPRESSION_THRESHOLD) {
+      toast.info("Compressing image...");
+      try {
+        processedFile = await compressImage(file);
+      } catch (error) {
+        console.error("Compression failed:", error);
+        toast.error("Failed to process image");
+        return;
+      }
+    }
+
+    // Check if still too large
+    if (processedFile.size > MAX_FILE_SIZE) {
+      toast.error("Image is too large. Please use a smaller image.");
+      return;
+    }
+
     if (verifyPreview) URL.revokeObjectURL(verifyPreview);
-    setVerifyPhoto(file);
-    setVerifyPreview(URL.createObjectURL(file));
+    setVerifyPhoto(processedFile);
+    setVerifyPreview(URL.createObjectURL(processedFile));
     setFitCheckResult(null);
+  };
+
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    await processFile(file);
 
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      await processFile(file);
     }
   };
 
@@ -503,10 +609,19 @@ export function OutfitDetailModal({
               {!verifyPreview ? (
                 <div
                   onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center cursor-pointer hover:border-muted-foreground/50 transition-colors"
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+                    isDragging
+                      ? "border-purple-500 bg-purple-500/10"
+                      : "border-muted-foreground/25 hover:border-muted-foreground/50"
+                  }`}
                 >
                   <p className="text-sm text-muted-foreground">
-                    Upload a photo of you wearing this outfit to get AI feedback
+                    {isDragging
+                      ? "Drop your photo here!"
+                      : "Drag & drop a photo, or click to select"}
                   </p>
                   <Button variant="outline" size="sm" className="mt-3">
                     Choose Photo
