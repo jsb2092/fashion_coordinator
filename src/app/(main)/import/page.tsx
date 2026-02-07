@@ -104,7 +104,7 @@ export default function ImportPage() {
 
       const result = await response.json();
       toast.success(`Successfully imported ${result.count} item(s)`);
-      router.push("/");
+      router.push("/wardrobe");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Import failed";
       toast.error(message);

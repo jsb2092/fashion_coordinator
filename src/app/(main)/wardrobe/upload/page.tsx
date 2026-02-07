@@ -119,7 +119,7 @@ export default function UploadPage() {
       });
 
       toast.success("Item added to wardrobe");
-      router.push("/");
+      router.push("/wardrobe");
     } catch (error) {
       console.error("Save error:", error);
       toast.error("Failed to save item");

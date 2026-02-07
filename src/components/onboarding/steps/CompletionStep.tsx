@@ -27,7 +27,7 @@ export function CompletionStep({
 
   const handleExplore = () => {
     onComplete();
-    router.push("/");
+    router.push("/wardrobe");
   };
 
   return (

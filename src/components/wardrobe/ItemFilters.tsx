@@ -29,11 +29,11 @@ export function ItemFilters() {
     } else {
       params.delete(key);
     }
-    router.push(`/?${params.toString()}`);
+    router.push(`/wardrobe?${params.toString()}`);
   };
 
   const clearFilters = () => {
-    router.push("/");
+    router.push("/wardrobe");
   };
 
   const hasFilters = searchParams.toString().length > 0;
