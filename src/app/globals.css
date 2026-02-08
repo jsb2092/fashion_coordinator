@@ -563,3 +563,30 @@ button[class*="cl-profileSection"],
   border-color: var(--clerk-border) !important;
   color: var(--clerk-text) !important;
 }
+
+/* Nuclear option - force ALL elements in clerk profile to dark */
+.cl-userProfile-root button,
+.cl-userProfile-root input,
+.cl-userProfile-root [role="button"],
+.cl-userProfile-root a,
+.cl-userProfile-root span,
+.cl-userProfile-root div {
+  background-color: var(--clerk-bg) !important;
+  color: var(--clerk-text) !important;
+  border-color: var(--clerk-border) !important;
+}
+
+/* Re-apply specific button styles */
+.cl-userProfile-root .cl-formButtonPrimary,
+.cl-userProfile-root .cl-profileSectionPrimaryButton,
+.cl-userProfile-root button[class*="Primary"] {
+  background-color: var(--clerk-btn-bg) !important;
+  color: var(--clerk-btn-text) !important;
+}
+
+/* Make inputs slightly different shade */
+.cl-userProfile-root input,
+.cl-userProfile-root [class*="input"],
+.cl-userProfile-root [class*="Input"] {
+  background-color: var(--clerk-bg-secondary) !important;
+}
