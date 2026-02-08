@@ -590,3 +590,31 @@ button[class*="cl-profileSection"],
 .cl-userProfile-root [class*="Input"] {
   background-color: var(--clerk-bg-secondary) !important;
 }
+
+/* Target the email addresses list specifically */
+.cl-profileSectionItemList,
+.cl-profileSectionItemList__emailAddresses,
+.cl-profileSectionItemList__phoneNumbers,
+.cl-profileSectionItemList__connectedAccounts,
+.cl-profileSectionItemList * {
+  background-color: var(--clerk-bg) !important;
+  color: var(--clerk-text) !important;
+  border-color: var(--clerk-border) !important;
+}
+
+/* Ghost variant buttons in profile */
+.cl-profileSectionPrimaryButton__emailAddresses,
+.cl-profileSectionPrimaryButton__phoneNumbers,
+.cl-profileSectionPrimaryButton__connectedAccounts,
+.cl-button__emailAddresses,
+button[data-variant="ghost"][data-color="primary"],
+.cl-userProfile-root button[data-variant="ghost"] {
+  background-color: var(--clerk-bg-secondary) !important;
+  color: var(--clerk-text) !important;
+  border-color: var(--clerk-border) !important;
+}
+
+.cl-userProfile-root .cl-badge {
+  background-color: var(--clerk-bg-secondary) !important;
+  color: var(--clerk-text) !important;
+}

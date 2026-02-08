@@ -79,6 +79,19 @@ const clerkAppearance = {
     // Target the add buttons in profile sections
     profileSectionItemList: {
       backgroundColor: "var(--clerk-bg)",
+      color: "var(--clerk-text)",
+    },
+    "profileSectionItemList__emailAddresses": {
+      backgroundColor: "var(--clerk-bg)",
+      color: "var(--clerk-text)",
+    },
+    "profileSectionItemList__phoneNumbers": {
+      backgroundColor: "var(--clerk-bg)",
+      color: "var(--clerk-text)",
+    },
+    "profileSectionItemList__connectedAccounts": {
+      backgroundColor: "var(--clerk-bg)",
+      color: "var(--clerk-text)",
     },
     profileSectionItem: {
       backgroundColor: "var(--clerk-bg)",
