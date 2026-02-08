@@ -201,12 +201,36 @@
   color: #a0a0a0 !important;
 }
 
-/* Force light color scheme on Clerk elements by default */
+/* Clerk theme variables - respond to light/dark mode */
+:root {
+  --clerk-bg: #ffffff;
+  --clerk-bg-secondary: #f5f5f5;
+  --clerk-text: #171717;
+  --clerk-text-secondary: #737373;
+  --clerk-border: #e5e5e5;
+  --clerk-btn-bg: #171717;
+  --clerk-btn-text: #ffffff;
+  --clerk-hover: #f5f5f5;
+}
+
+:root.dark, .dark {
+  --clerk-bg: #2a2520;
+  --clerk-bg-secondary: #3d3730;
+  --clerk-text: #f5f5f0;
+  --clerk-text-secondary: #a0a0a0;
+  --clerk-border: #4d473f;
+  --clerk-btn-bg: #f5f5f0;
+  --clerk-btn-text: #2a2520;
+  --clerk-hover: #3d3730;
+}
+
+/* Force color scheme on Clerk elements */
 [class*="cl-"] {
   color-scheme: light !important;
 }
 
-:root.dark [class*="cl-"] {
+:root.dark [class*="cl-"],
+.dark [class*="cl-"] {
   color-scheme: dark !important;
 }
 
@@ -476,4 +500,39 @@ html.dark .cl-userProfile-root .cl-profileSectionPrimaryButton {
 .cl-internal-1hp5nqm,
 [class*="cl-internal"] {
   background-color: inherit !important;
+}
+
+/* Ultimate fallback - use CSS variables for Clerk elements */
+.cl-userProfile-root,
+.cl-userProfile-root *:not(button):not(input):not(img):not(svg):not(path) {
+  background-color: var(--clerk-bg) !important;
+  color: var(--clerk-text) !important;
+}
+
+.cl-userProfile-root button:not(.cl-formButtonPrimary):not(.cl-profileSectionPrimaryButton) {
+  background-color: transparent !important;
+  color: var(--clerk-text) !important;
+}
+
+.cl-userProfile-root .cl-formButtonPrimary,
+.cl-userProfile-root .cl-profileSectionPrimaryButton {
+  background-color: var(--clerk-btn-bg) !important;
+  color: var(--clerk-btn-text) !important;
+}
+
+.cl-userProfile-root input,
+.cl-userProfile-root .cl-formFieldInput {
+  background-color: var(--clerk-bg-secondary) !important;
+  border-color: var(--clerk-border) !important;
+  color: var(--clerk-text) !important;
+}
+
+.cl-navbarButton:hover,
+.cl-accordionTriggerButton:hover,
+.cl-menuItem:hover {
+  background-color: var(--clerk-hover) !important;
+}
+
+.cl-navbarButton[data-active="true"] {
+  background-color: var(--clerk-hover) !important;
 }

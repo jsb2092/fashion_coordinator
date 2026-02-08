@@ -6,20 +6,6 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
-// Force light mode base appearance - CSS handles dark mode overrides
-const clerkAppearance = {
-  baseTheme: undefined, // Don't use any base theme
-  variables: {
-    colorBackground: "#ffffff",
-    colorText: "#171717",
-    colorTextSecondary: "#737373",
-    colorInputBackground: "#ffffff",
-    colorInputText: "#171717",
-    colorPrimary: "#171717",
-    colorDanger: "#ef4444",
-  },
-};
-
 const adsenseClientId = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID;
 
 const geistSans = Geist({
@@ -43,7 +29,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider appearance={clerkAppearance}>
+    <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
         <head>
           {adsenseClientId && (
