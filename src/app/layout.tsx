@@ -93,6 +93,18 @@ const clerkAppearance = {
       backgroundColor: "var(--clerk-bg)",
       color: "var(--clerk-text)",
     },
+    "profileSectionPrimaryButton__emailAddresses": {
+      backgroundColor: "var(--clerk-bg-secondary)",
+      color: "var(--clerk-text)",
+    },
+    "profileSectionPrimaryButton__phoneNumbers": {
+      backgroundColor: "var(--clerk-bg-secondary)",
+      color: "var(--clerk-text)",
+    },
+    "profileSectionPrimaryButton__connectedAccounts": {
+      backgroundColor: "var(--clerk-bg-secondary)",
+      color: "var(--clerk-text)",
+    },
     profileSectionItem: {
       backgroundColor: "var(--clerk-bg)",
     },
