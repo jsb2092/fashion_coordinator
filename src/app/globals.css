@@ -131,44 +131,85 @@
 }
 
 /* Clerk component theming - follows app's light/dark mode */
-.cl-rootBox,
-.cl-card,
 .cl-userButtonPopoverCard,
-.cl-userButtonPopoverActions,
-.cl-userPreviewMainIdentifier,
-.cl-userPreviewSecondaryIdentifier,
-.cl-modalContent {
-  --cl-background: var(--background);
-  --cl-foreground: var(--foreground);
-  background-color: oklch(var(--card) / 1) !important;
-  color: oklch(var(--card-foreground) / 1) !important;
+.cl-userButtonPopoverRootBox,
+.cl-userButtonPopoverMain {
+  background-color: #ffffff !important;
+  border: 1px solid #e5e5e5 !important;
+  border-radius: 0.5rem !important;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
 }
 
-:root .cl-userButtonPopoverCard,
-:root .cl-modalContent {
-  background-color: white !important;
-  border: 1px solid oklch(0.922 0 0) !important;
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1) !important;
+.cl-userButtonPopoverActionButton,
+.cl-userButtonPopoverActionButton__manageAccount,
+.cl-userButtonPopoverActionButton__signOut {
+  color: #171717 !important;
 }
 
-.dark .cl-userButtonPopoverCard,
-.dark .cl-modalContent {
-  background-color: oklch(0.22 0.01 60) !important;
-  border: 1px solid oklch(0.35 0.01 60) !important;
+.cl-userButtonPopoverActionButtonText {
+  color: #171717 !important;
 }
 
-.cl-userButtonPopoverActionButton {
-  color: inherit !important;
+.cl-userButtonPopoverActionButtonIcon {
+  color: #737373 !important;
 }
 
 .cl-userButtonPopoverActionButton:hover {
-  background-color: oklch(var(--muted) / 1) !important;
+  background-color: #f5f5f5 !important;
 }
 
-.dark .cl-userButtonPopoverActionButton:hover {
-  background-color: oklch(0.28 0.01 60) !important;
+.cl-userPreviewMainIdentifier {
+  color: #171717 !important;
+}
+
+.cl-userPreviewSecondaryIdentifier {
+  color: #737373 !important;
 }
 
 .cl-userButtonPopoverFooter {
   display: none !important;
+}
+
+/* Dark mode */
+.dark .cl-userButtonPopoverCard,
+.dark .cl-userButtonPopoverRootBox,
+.dark .cl-userButtonPopoverMain {
+  background-color: #2a2520 !important;
+  border-color: #3d3730 !important;
+}
+
+.dark .cl-userButtonPopoverActionButton,
+.dark .cl-userButtonPopoverActionButton__manageAccount,
+.dark .cl-userButtonPopoverActionButton__signOut,
+.dark .cl-userButtonPopoverActionButtonText {
+  color: #f5f5f0 !important;
+}
+
+.dark .cl-userButtonPopoverActionButtonIcon {
+  color: #a0a0a0 !important;
+}
+
+.dark .cl-userButtonPopoverActionButton:hover {
+  background-color: #3d3730 !important;
+}
+
+.dark .cl-userPreviewMainIdentifier {
+  color: #f5f5f0 !important;
+}
+
+.dark .cl-userPreviewSecondaryIdentifier {
+  color: #a0a0a0 !important;
+}
+
+/* Modal/profile settings styling */
+.cl-modalContent,
+.cl-modalBackdrop + div,
+.cl-card {
+  background-color: #ffffff !important;
+  border-radius: 0.5rem !important;
+}
+
+.dark .cl-modalContent,
+.dark .cl-card {
+  background-color: #2a2520 !important;
 }
