@@ -201,16 +201,46 @@
   color: #a0a0a0 !important;
 }
 
+/* Force light color scheme on Clerk elements by default */
+[class*="cl-"] {
+  color-scheme: light !important;
+}
+
+:root.dark [class*="cl-"] {
+  color-scheme: dark !important;
+}
+
 /* Modal/profile settings styling */
 .cl-modalContent,
 .cl-modalBackdrop + div,
 .cl-card,
 .cl-userProfile-root,
 .cl-profilePage-root,
-.cl-accountPage-root {
+.cl-accountPage-root,
+.cl-rootBox,
+.cl-pageScrollBox,
+.cl-scrollBox,
+.cl-page,
+.cl-main,
+.cl-profilePage,
+.cl-profileSection__profile,
+.cl-profileSection__emailAddresses,
+.cl-profileSection__connectedAccounts,
+.cl-profileSection__danger {
   background-color: #ffffff !important;
   border-radius: 0.5rem !important;
   color: #171717 !important;
+}
+
+/* Force all divs inside userProfile to be light */
+.cl-userProfile-root * {
+  background-color: transparent !important;
+}
+
+.cl-userProfile-root,
+.cl-userProfile-root > div,
+.cl-userProfile-root > div > div {
+  background-color: #ffffff !important;
 }
 
 .cl-navbar,
@@ -218,7 +248,15 @@
 .cl-profileSection,
 .cl-profileSectionContent,
 .cl-formContainer,
-.cl-form {
+.cl-form,
+.cl-profileSectionHeader,
+.cl-profileSectionItemList,
+.cl-profileSectionItem,
+.cl-accordionContent,
+.cl-formFieldRow,
+.cl-identityPreview,
+.cl-identityPreviewEditButton,
+.cl-avatarBox {
   background-color: #ffffff !important;
 }
 
@@ -263,11 +301,36 @@
 }
 
 /* Dark mode for profile/modal */
+:root.dark .cl-modalContent,
+:root.dark .cl-card,
+:root.dark .cl-userProfile-root,
+:root.dark .cl-profilePage-root,
+:root.dark .cl-accountPage-root,
+:root.dark .cl-rootBox,
+:root.dark .cl-pageScrollBox,
+:root.dark .cl-scrollBox,
+:root.dark .cl-page,
+:root.dark .cl-main,
+:root.dark .cl-profilePage,
+:root.dark .cl-profileSection__profile,
+:root.dark .cl-profileSection__emailAddresses,
+:root.dark .cl-profileSection__connectedAccounts,
+:root.dark .cl-profileSection__danger,
 .dark .cl-modalContent,
 .dark .cl-card,
 .dark .cl-userProfile-root,
 .dark .cl-profilePage-root,
-.dark .cl-accountPage-root {
+.dark .cl-accountPage-root,
+.dark .cl-rootBox,
+.dark .cl-pageScrollBox,
+.dark .cl-scrollBox,
+.dark .cl-page,
+.dark .cl-main,
+.dark .cl-profilePage,
+.dark .cl-profileSection__profile,
+.dark .cl-profileSection__emailAddresses,
+.dark .cl-profileSection__connectedAccounts,
+.dark .cl-profileSection__danger {
   background-color: #2a2520 !important;
   color: #f5f5f0 !important;
 }
@@ -277,7 +340,15 @@
 .dark .cl-profileSection,
 .dark .cl-profileSectionContent,
 .dark .cl-formContainer,
-.dark .cl-form {
+.dark .cl-form,
+.dark .cl-profileSectionHeader,
+.dark .cl-profileSectionItemList,
+.dark .cl-profileSectionItem,
+.dark .cl-accordionContent,
+.dark .cl-formFieldRow,
+.dark .cl-identityPreview,
+.dark .cl-identityPreviewEditButton,
+.dark .cl-avatarBox {
   background-color: #2a2520 !important;
 }
 
@@ -326,4 +397,83 @@
   background-color: #3d3730 !important;
   border-color: #4d473f !important;
   color: #f5f5f0 !important;
+}
+
+/* Force all divs inside userProfile to be dark mode colors */
+:root.dark .cl-userProfile-root *,
+.dark .cl-userProfile-root * {
+  background-color: transparent !important;
+}
+
+:root.dark .cl-userProfile-root,
+:root.dark .cl-userProfile-root > div,
+:root.dark .cl-userProfile-root > div > div,
+.dark .cl-userProfile-root,
+.dark .cl-userProfile-root > div,
+.dark .cl-userProfile-root > div > div {
+  background-color: #2a2520 !important;
+}
+
+/* Catch-all for Clerk user profile modal - light mode */
+[data-clerk-component="UserProfile"] [class*="cl-"],
+.cl-userProfile-root [class*="cl-"],
+.cl-userProfile-root div,
+.cl-userProfile-root section {
+  background-color: #ffffff !important;
+  color: #171717 !important;
+}
+
+.cl-userProfile-root button:not(.cl-formButtonPrimary):not(.cl-profileSectionPrimaryButton) {
+  color: #171717 !important;
+}
+
+.cl-userProfile-root .cl-formButtonPrimary,
+.cl-userProfile-root .cl-profileSectionPrimaryButton {
+  background-color: #171717 !important;
+  color: #ffffff !important;
+}
+
+/* Catch-all for Clerk user profile modal - dark mode */
+.dark [data-clerk-component="UserProfile"] [class*="cl-"],
+.dark .cl-userProfile-root [class*="cl-"],
+.dark .cl-userProfile-root div,
+.dark .cl-userProfile-root section {
+  background-color: #2a2520 !important;
+  color: #f5f5f0 !important;
+}
+
+.dark .cl-userProfile-root button:not(.cl-formButtonPrimary):not(.cl-profileSectionPrimaryButton) {
+  color: #f5f5f0 !important;
+}
+
+.dark .cl-userProfile-root .cl-formButtonPrimary,
+.dark .cl-userProfile-root .cl-profileSectionPrimaryButton {
+  background-color: #f5f5f0 !important;
+  color: #2a2520 !important;
+}
+
+/* Target Clerk portal when html has dark class (for modal rendered outside body) */
+html.dark .cl-userProfile-root [class*="cl-"],
+html.dark .cl-userProfile-root div,
+html.dark .cl-userProfile-root section,
+html.dark .cl-modalContent,
+html.dark .cl-card,
+html.dark [data-clerk-component] {
+  background-color: #2a2520 !important;
+  color: #f5f5f0 !important;
+}
+
+html.dark .cl-userProfile-root .cl-formButtonPrimary,
+html.dark .cl-userProfile-root .cl-profileSectionPrimaryButton {
+  background-color: #f5f5f0 !important;
+  color: #2a2520 !important;
+}
+
+/* Override Clerk's internal theme */
+.cl-internal-b3fm6y,
+.cl-internal-kvqqnh,
+.cl-internal-1dauvpw,
+.cl-internal-1hp5nqm,
+[class*="cl-internal"] {
+  background-color: inherit !important;
 }
