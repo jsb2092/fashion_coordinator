@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { ClerkStyleFix } from "@/components/clerk-style-fix";
 import "./globals.css";
 
 // Use CSS variables so Clerk responds to theme changes
@@ -179,6 +180,7 @@ export default function RootLayout({
           >
             {children}
             <Toaster />
+            <ClerkStyleFix />
           </ThemeProvider>
         </body>
       </html>
