@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -9,6 +10,42 @@ import { Button } from "@/components/ui/button";
 
 interface AppSidebarProps {
   subscriptionTier?: string;
+}
+
+function MenuIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={1.5}
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
+      />
+    </svg>
+  );
+}
+
+function CloseIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={1.5}
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M6 18L18 6M6 6l12 12"
+      />
+    </svg>
+  );
 }
 
 const navigation = [
@@ -196,11 +233,12 @@ export function AppSidebar({ subscriptionTier = "free" }: AppSidebarProps) {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const isPro = subscriptionTier === "pro";
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  return (
-    <div className="flex h-full w-64 flex-col border-r bg-background">
-      <div className="flex h-16 items-center border-b px-6">
-        <Link href="/wardrobe" className="flex items-center gap-2">
+  const sidebarContent = (
+    <>
+      <div className="flex h-16 items-center border-b px-6 justify-between">
+        <Link href="/wardrobe" className="flex items-center gap-2" onClick={() => setMobileMenuOpen(false)}>
           <span className="text-xl font-semibold">Outfit IQ</span>
           {isPro && (
             <span className="text-xs font-medium bg-primary text-primary-foreground px-1.5 py-0.5 rounded">
@@ -208,6 +246,15 @@ export function AppSidebar({ subscriptionTier = "free" }: AppSidebarProps) {
             </span>
           )}
         </Link>
+        {/* Close button for mobile */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        >
+          <CloseIcon className="h-5 w-5" />
+        </Button>
       </div>
       <nav className="flex-1 space-y-1 p-4">
         {navigation.map((item) => {
@@ -218,6 +265,7 @@ export function AppSidebar({ subscriptionTier = "free" }: AppSidebarProps) {
             <Link
               key={item.name}
               href={item.href}
+              onClick={() => setMobileMenuOpen(false)}
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                 isActive
@@ -238,7 +286,7 @@ export function AppSidebar({ subscriptionTier = "free" }: AppSidebarProps) {
       </nav>
       <div className="border-t p-4 space-y-3">
         {!isPro && (
-          <Link href="/pricing">
+          <Link href="/pricing" onClick={() => setMobileMenuOpen(false)}>
             <Button variant="outline" size="sm" className="w-full gap-2">
               <CrownIcon className="h-4 w-4" />
               Upgrade to Pro
@@ -260,7 +308,6 @@ export function AppSidebar({ subscriptionTier = "free" }: AppSidebarProps) {
         <div
           className="flex items-center gap-3 cursor-pointer group"
           onClick={(e) => {
-            // Find and click the UserButton if clicking on the text area
             const userButton = e.currentTarget.querySelector('button');
             if (userButton && e.target !== userButton) {
               userButton.click();
@@ -273,6 +320,54 @@ export function AppSidebar({ subscriptionTier = "free" }: AppSidebarProps) {
           </span>
         </div>
       </div>
-    </div>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile header with hamburger */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-40 flex h-14 items-center justify-between border-b bg-background px-4">
+        <Link href="/wardrobe" className="flex items-center gap-2">
+          <span className="text-lg font-semibold">Outfit IQ</span>
+          {isPro && (
+            <span className="text-xs font-medium bg-primary text-primary-foreground px-1.5 py-0.5 rounded">
+              PRO
+            </span>
+          )}
+        </Link>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setMobileMenuOpen(true)}
+        >
+          <MenuIcon className="h-6 w-6" />
+        </Button>
+      </div>
+
+      {/* Mobile sidebar overlay */}
+      {mobileMenuOpen && (
+        <div
+          className="md:hidden fixed inset-0 z-50 bg-black/50"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Mobile sidebar drawer */}
+      <div
+        className={cn(
+          "md:hidden fixed inset-y-0 left-0 z-50 w-64 bg-background transform transition-transform duration-200 ease-in-out",
+          mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        <div className="flex h-full flex-col">
+          {sidebarContent}
+        </div>
+      </div>
+
+      {/* Desktop sidebar */}
+      <div className="hidden md:flex h-full w-64 flex-col border-r bg-background">
+        {sidebarContent}
+      </div>
+    </>
   );
 }

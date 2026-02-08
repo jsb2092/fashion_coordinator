@@ -14,7 +14,7 @@ export default async function MainLayout({
   return (
     <div className="flex h-screen">
       <AppSidebar subscriptionTier={person.subscriptionTier} />
-      <main className={`flex-1 overflow-auto ${!isPro ? "pb-[60px]" : ""}`}>
+      <main className={`flex-1 overflow-auto pt-14 md:pt-0 ${!isPro ? "pb-[60px]" : ""}`}>
         {children}
       </main>
       {!isPro && <ContentBannerAd />}
