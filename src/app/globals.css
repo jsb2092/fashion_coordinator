@@ -536,3 +536,14 @@ html.dark .cl-userProfile-root .cl-profileSectionPrimaryButton {
 .cl-navbarButton[data-active="true"] {
   background-color: var(--clerk-hover) !important;
 }
+
+/* Add email/phone button styling */
+.cl-userProfile-root .cl-formButtonReset,
+.cl-userProfile-root [class*="actionCard"],
+.cl-userProfile-root [class*="alternativeMethods"],
+.cl-userProfile-root .cl-profileSectionItem__emailAddresses button,
+.cl-userProfile-root .cl-profileSectionItem__phoneNumbers button {
+  background-color: var(--clerk-bg-secondary) !important;
+  border-color: var(--clerk-border) !important;
+  color: var(--clerk-text) !important;
+}

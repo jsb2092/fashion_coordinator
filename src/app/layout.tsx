@@ -51,6 +51,20 @@ const clerkAppearance = {
       backgroundColor: "var(--clerk-btn-bg)",
       color: "var(--clerk-btn-text)",
     },
+    actionCard: {
+      backgroundColor: "var(--clerk-bg-secondary)",
+      borderColor: "var(--clerk-border)",
+    },
+    alternativeMethodsBlockButton: {
+      backgroundColor: "var(--clerk-bg-secondary)",
+      color: "var(--clerk-text)",
+      borderColor: "var(--clerk-border)",
+    },
+    otpCodeFieldInput: {
+      backgroundColor: "var(--clerk-bg-secondary)",
+      borderColor: "var(--clerk-border)",
+      color: "var(--clerk-text)",
+    },
     headerTitle: {
       color: "var(--clerk-text)",
     },
