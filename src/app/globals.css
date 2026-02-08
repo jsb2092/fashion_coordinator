@@ -493,13 +493,26 @@ html.dark .cl-userProfile-root .cl-profileSectionPrimaryButton {
   color: #2a2520 !important;
 }
 
-/* Override Clerk's internal theme */
-.cl-internal-b3fm6y,
-.cl-internal-kvqqnh,
-.cl-internal-1dauvpw,
-.cl-internal-1hp5nqm,
+/* Override Clerk's internal theme - force all internal classes to inherit */
 [class*="cl-internal"] {
   background-color: inherit !important;
+  color: inherit !important;
+}
+
+/* Force the add email button specifically */
+button.cl-profileSectionPrimaryButton.cl-profileSectionPrimaryButton__emailAddresses,
+button.cl-button__emailAddresses,
+button[class*="profileSectionPrimaryButton"][class*="emailAddresses"] {
+  background-color: var(--clerk-bg-secondary) !important;
+  color: var(--clerk-text) !important;
+  border: 1px solid var(--clerk-border) !important;
+}
+
+/* Target by the internal class pattern */
+button[class*="cl-internal-pmmijc"],
+button[class*="cl-internal"][class*="emailAddresses"] {
+  background-color: var(--clerk-bg-secondary) !important;
+  color: var(--clerk-text) !important;
 }
 
 /* Ultimate fallback - use CSS variables for Clerk elements */
