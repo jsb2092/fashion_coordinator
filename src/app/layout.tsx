@@ -65,6 +65,28 @@ const clerkAppearance = {
       borderColor: "var(--clerk-border)",
       color: "var(--clerk-text)",
     },
+    menuList: {
+      backgroundColor: "var(--clerk-bg)",
+    },
+    menuItem: {
+      backgroundColor: "var(--clerk-bg)",
+      color: "var(--clerk-text)",
+    },
+    badge: {
+      backgroundColor: "var(--clerk-bg-secondary)",
+      color: "var(--clerk-text)",
+    },
+    // Target the add buttons in profile sections
+    profileSectionItemList: {
+      backgroundColor: "var(--clerk-bg)",
+    },
+    profileSectionItem: {
+      backgroundColor: "var(--clerk-bg)",
+    },
+    button: {
+      backgroundColor: "var(--clerk-bg-secondary)",
+      color: "var(--clerk-text)",
+    },
     headerTitle: {
       color: "var(--clerk-text)",
     },

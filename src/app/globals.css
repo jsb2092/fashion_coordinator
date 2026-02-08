@@ -542,7 +542,23 @@ html.dark .cl-userProfile-root .cl-profileSectionPrimaryButton {
 .cl-userProfile-root [class*="actionCard"],
 .cl-userProfile-root [class*="alternativeMethods"],
 .cl-userProfile-root .cl-profileSectionItem__emailAddresses button,
-.cl-userProfile-root .cl-profileSectionItem__phoneNumbers button {
+.cl-userProfile-root .cl-profileSectionItem__phoneNumbers button,
+.cl-menuList,
+.cl-menuItem,
+.cl-menuButton,
+.cl-actionCard,
+.cl-profileSection button[class*="cl-"],
+button[class*="cl-profileSection"],
+.cl-profileSectionContent button {
+  background-color: var(--clerk-bg-secondary) !important;
+  border-color: var(--clerk-border) !important;
+  color: var(--clerk-text) !important;
+}
+
+/* Specifically target the add button row */
+.cl-userProfile-root div[class*="cl-"] > button:not(.cl-profileSectionPrimaryButton):not(.cl-formButtonPrimary),
+.cl-profileSection__emailAddresses button:not(.cl-profileSectionPrimaryButton),
+.cl-profileSection__connectedAccounts button:not(.cl-profileSectionPrimaryButton) {
   background-color: var(--clerk-bg-secondary) !important;
   border-color: var(--clerk-border) !important;
   color: var(--clerk-text) !important;
