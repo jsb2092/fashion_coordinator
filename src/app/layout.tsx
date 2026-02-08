@@ -6,6 +6,72 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
+// Use CSS variables so Clerk responds to theme changes
+const clerkAppearance = {
+  variables: {
+    colorBackground: "var(--clerk-bg)",
+    colorText: "var(--clerk-text)",
+    colorTextSecondary: "var(--clerk-text-secondary)",
+    colorInputBackground: "var(--clerk-bg-secondary)",
+    colorInputText: "var(--clerk-text)",
+    colorPrimary: "var(--clerk-btn-bg)",
+  },
+  elements: {
+    card: {
+      backgroundColor: "var(--clerk-bg)",
+      color: "var(--clerk-text)",
+    },
+    navbar: {
+      backgroundColor: "var(--clerk-bg)",
+    },
+    navbarButton: {
+      color: "var(--clerk-text)",
+    },
+    pageScrollBox: {
+      backgroundColor: "var(--clerk-bg)",
+    },
+    page: {
+      backgroundColor: "var(--clerk-bg)",
+    },
+    profileSection: {
+      backgroundColor: "var(--clerk-bg)",
+    },
+    profileSectionContent: {
+      backgroundColor: "var(--clerk-bg)",
+    },
+    formFieldInput: {
+      backgroundColor: "var(--clerk-bg-secondary)",
+      borderColor: "var(--clerk-border)",
+    },
+    formButtonPrimary: {
+      backgroundColor: "var(--clerk-btn-bg)",
+      color: "var(--clerk-btn-text)",
+    },
+    profileSectionPrimaryButton: {
+      backgroundColor: "var(--clerk-btn-bg)",
+      color: "var(--clerk-btn-text)",
+    },
+    headerTitle: {
+      color: "var(--clerk-text)",
+    },
+    headerSubtitle: {
+      color: "var(--clerk-text-secondary)",
+    },
+    identityPreviewText: {
+      color: "var(--clerk-text)",
+    },
+    identityPreviewEditButtonIcon: {
+      color: "var(--clerk-text)",
+    },
+    formFieldLabel: {
+      color: "var(--clerk-text)",
+    },
+    accordionTriggerButton: {
+      color: "var(--clerk-text)",
+    },
+  },
+};
+
 const adsenseClientId = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID;
 
 const geistSans = Geist({
@@ -29,7 +95,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider appearance={clerkAppearance}>
       <html lang="en" suppressHydrationWarning>
         <head>
           {adsenseClientId && (
