@@ -45,7 +45,7 @@ async function fetchImageFromS3(imageUrl: string): Promise<{ base64: string; med
       return null;
     }
 
-    let imageBuffer = Buffer.from(await response.Body.transformToByteArray());
+    let imageBuffer: Buffer = Buffer.from(await response.Body.transformToByteArray());
 
     // If image is too large, resize it
     if (imageBuffer.length > MAX_IMAGE_SIZE) {
@@ -58,7 +58,7 @@ async function fetchImageFromS3(imageUrl: string): Promise<{ base64: string; med
 
       // Calculate new dimensions - reduce by 50% until under limit
       let scale = 0.5;
-      let resizedBuffer = imageBuffer;
+      let resizedBuffer: Buffer = imageBuffer;
 
       while (resizedBuffer.length > MAX_IMAGE_SIZE && scale > 0.1) {
         const newWidth = Math.round(currentWidth * scale);
@@ -67,7 +67,7 @@ async function fetchImageFromS3(imageUrl: string): Promise<{ base64: string; med
         resizedBuffer = await sharp(imageBuffer)
           .resize(newWidth, newHeight, { fit: 'inside' })
           .jpeg({ quality: 85 })
-          .toBuffer();
+          .toBuffer() as Buffer;
 
         console.log(`Resized to ${newWidth}x${newHeight}: ${(resizedBuffer.length / 1024 / 1024).toFixed(2)}MB`);
 
