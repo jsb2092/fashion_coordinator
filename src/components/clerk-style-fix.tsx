@@ -23,6 +23,18 @@ export function ClerkStyleFix() {
           el.style.setProperty("color", "#171717", "important");
           el.style.setProperty("border-color", "#e5e5e5", "important");
         }
+
+        // Also fix all child elements to have transparent background
+        el.querySelectorAll("*").forEach((child) => {
+          const childEl = child as HTMLElement;
+          childEl.style.setProperty("background-color", "transparent", "important");
+          childEl.style.setProperty("background", "transparent", "important");
+          if (isDark) {
+            childEl.style.setProperty("color", "#f5f5f0", "important");
+          } else {
+            childEl.style.setProperty("color", "#171717", "important");
+          }
+        });
       });
     };
 
