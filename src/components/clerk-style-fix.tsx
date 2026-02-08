@@ -11,25 +11,25 @@ export function ClerkStyleFix() {
       if (isFixing) return;
       isFixing = true;
 
-      const buttons = document.querySelectorAll(
-        'button.cl-profileSectionPrimaryButton__emailAddresses, button.cl-profileSectionPrimaryButton__phoneNumbers, button.cl-profileSectionPrimaryButton__connectedAccounts'
-      );
-
       const isDark = document.documentElement.classList.contains("dark");
       const bgColor = isDark ? "#3d3730" : "#f5f5f5";
+      const bgMain = isDark ? "#2a2520" : "#ffffff";
       const textColor = isDark ? "#f5f5f0" : "#171717";
       const borderColor = isDark ? "#4d473f" : "#e5e5e5";
 
-      buttons.forEach((button) => {
-        const el = button as HTMLElement;
+      // Fix add email/phone buttons
+      const addButtons = document.querySelectorAll(
+        'button.cl-profileSectionPrimaryButton__emailAddresses, button.cl-profileSectionPrimaryButton__phoneNumbers, button.cl-profileSectionPrimaryButton__connectedAccounts'
+      );
 
-        // Only update if not already set correctly
-        if (el.style.backgroundColor !== bgColor) {
+      addButtons.forEach((button) => {
+        const el = button as HTMLElement;
+        if (el.dataset.clerkFixed !== "true") {
           el.style.setProperty("background-color", bgColor, "important");
           el.style.setProperty("color", textColor, "important");
           el.style.setProperty("border-color", borderColor, "important");
+          el.dataset.clerkFixed = "true";
 
-          // Also fix all child elements to have transparent background
           el.querySelectorAll("*").forEach((child) => {
             const childEl = child as HTMLElement;
             childEl.style.setProperty("background-color", "transparent", "important");
@@ -37,6 +37,31 @@ export function ClerkStyleFix() {
             childEl.style.setProperty("color", textColor, "important");
           });
         }
+      });
+
+      // Fix navbar buttons (Profile, Security)
+      const navButtons = document.querySelectorAll('.cl-navbarButton');
+      navButtons.forEach((button) => {
+        const el = button as HTMLElement;
+        if (el.dataset.clerkFixed !== "true") {
+          el.style.setProperty("background-color", "transparent", "important");
+          el.style.setProperty("color", textColor, "important");
+          el.dataset.clerkFixed = "true";
+
+          el.querySelectorAll("*").forEach((child) => {
+            const childEl = child as HTMLElement;
+            childEl.style.setProperty("background-color", "transparent", "important");
+            childEl.style.setProperty("background", "transparent", "important");
+            childEl.style.setProperty("color", textColor, "important");
+          });
+        }
+      });
+
+      // Fix navbar container
+      const navbar = document.querySelectorAll('.cl-navbar, .cl-navbarButtons');
+      navbar.forEach((el) => {
+        const htmlEl = el as HTMLElement;
+        htmlEl.style.setProperty("background-color", bgMain, "important");
       });
 
       isFixing = false;
@@ -58,12 +83,9 @@ export function ClerkStyleFix() {
 
     // Also listen for theme changes on html element
     const htmlObserver = new MutationObserver(() => {
-      // Force re-check all buttons when theme changes
-      const buttons = document.querySelectorAll(
-        'button.cl-profileSectionPrimaryButton__emailAddresses, button.cl-profileSectionPrimaryButton__phoneNumbers, button.cl-profileSectionPrimaryButton__connectedAccounts'
-      );
-      buttons.forEach((el) => {
-        (el as HTMLElement).style.backgroundColor = "";
+      // Reset all fixed elements when theme changes
+      document.querySelectorAll('[data-clerk-fixed]').forEach((el) => {
+        delete (el as HTMLElement).dataset.clerkFixed;
       });
       fixClerkStyles();
     });
