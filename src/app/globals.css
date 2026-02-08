@@ -499,20 +499,29 @@ html.dark .cl-userProfile-root .cl-profileSectionPrimaryButton {
   color: inherit !important;
 }
 
-/* Force the add email button specifically */
-button.cl-profileSectionPrimaryButton.cl-profileSectionPrimaryButton__emailAddresses,
-button.cl-button__emailAddresses,
-button[class*="profileSectionPrimaryButton"][class*="emailAddresses"] {
+/* Force the add email button - nuclear reset */
+button.cl-profileSectionPrimaryButton__emailAddresses,
+button.cl-profileSectionPrimaryButton__phoneNumbers,
+button.cl-profileSectionPrimaryButton__connectedAccounts {
+  all: unset !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  padding: 0.5rem 1rem !important;
+  border-radius: 0.375rem !important;
+  cursor: pointer !important;
   background-color: var(--clerk-bg-secondary) !important;
   color: var(--clerk-text) !important;
   border: 1px solid var(--clerk-border) !important;
+  font-size: 0.875rem !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
-/* Target by the internal class pattern */
-button[class*="cl-internal-pmmijc"],
-button[class*="cl-internal"][class*="emailAddresses"] {
-  background-color: var(--clerk-bg-secondary) !important;
-  color: var(--clerk-text) !important;
+button.cl-profileSectionPrimaryButton__emailAddresses *,
+button.cl-profileSectionPrimaryButton__phoneNumbers *,
+button.cl-profileSectionPrimaryButton__connectedAccounts * {
+  color: inherit !important;
 }
 
 /* Ultimate fallback - use CSS variables for Clerk elements */
