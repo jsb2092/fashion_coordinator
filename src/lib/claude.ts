@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import sharp from "sharp";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
@@ -16,7 +17,10 @@ const s3Client = new S3Client({
   forcePathStyle: true,
 });
 
-// Helper to fetch image from S3 and convert to base64
+// Max image size for Claude API (5MB, using 4MB to be safe)
+const MAX_IMAGE_SIZE = 4 * 1024 * 1024;
+
+// Helper to fetch image from S3, resize if needed, and convert to base64
 async function fetchImageFromS3(imageUrl: string): Promise<{ base64: string; mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp" } | null> {
   try {
     // Extract S3 key from URL like /api/upload/image/wardrobe%2Fuser%2Ffile.jpeg
@@ -41,15 +45,52 @@ async function fetchImageFromS3(imageUrl: string): Promise<{ base64: string; med
       return null;
     }
 
-    const arrayBuffer = await response.Body.transformToByteArray();
-    const base64 = Buffer.from(arrayBuffer).toString("base64");
+    let imageBuffer = Buffer.from(await response.Body.transformToByteArray());
 
-    // Determine media type
+    // If image is too large, resize it
+    if (imageBuffer.length > MAX_IMAGE_SIZE) {
+      console.log(`Image too large (${(imageBuffer.length / 1024 / 1024).toFixed(2)}MB), resizing...`);
+
+      // Get image metadata to calculate resize dimensions
+      const metadata = await sharp(imageBuffer).metadata();
+      const currentWidth = metadata.width || 1920;
+      const currentHeight = metadata.height || 1080;
+
+      // Calculate new dimensions - reduce by 50% until under limit
+      let scale = 0.5;
+      let resizedBuffer = imageBuffer;
+
+      while (resizedBuffer.length > MAX_IMAGE_SIZE && scale > 0.1) {
+        const newWidth = Math.round(currentWidth * scale);
+        const newHeight = Math.round(currentHeight * scale);
+
+        resizedBuffer = await sharp(imageBuffer)
+          .resize(newWidth, newHeight, { fit: 'inside' })
+          .jpeg({ quality: 85 })
+          .toBuffer();
+
+        console.log(`Resized to ${newWidth}x${newHeight}: ${(resizedBuffer.length / 1024 / 1024).toFixed(2)}MB`);
+
+        if (resizedBuffer.length > MAX_IMAGE_SIZE) {
+          scale *= 0.7;
+        }
+      }
+
+      imageBuffer = resizedBuffer;
+    }
+
+    const base64 = imageBuffer.toString("base64");
+
+    // After resize, we're always outputting JPEG
     const contentType = response.ContentType || "image/jpeg";
     let mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp" = "image/jpeg";
-    if (contentType.includes("png")) mediaType = "image/png";
-    else if (contentType.includes("gif")) mediaType = "image/gif";
-    else if (contentType.includes("webp")) mediaType = "image/webp";
+
+    // Only preserve original type if we didn't resize
+    if (imageBuffer.length <= MAX_IMAGE_SIZE) {
+      if (contentType.includes("png")) mediaType = "image/png";
+      else if (contentType.includes("gif")) mediaType = "image/gif";
+      else if (contentType.includes("webp")) mediaType = "image/webp";
+    }
 
     return { base64, mediaType };
   } catch (error) {
