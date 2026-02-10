@@ -17,6 +17,43 @@ export function ClerkStyleFix() {
       gold: "#dfc08a",
     };
 
+    // Inject a style tag for broad CSS coverage
+    const styleId = 'clerk-navy-fix';
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.textContent = `
+        .dark [data-clerk-component] *,
+        .dark [class*="cl-"] *,
+        .dark .cl-rootBox *,
+        .dark .cl-signIn-root *,
+        .dark .cl-signUp-root *,
+        .dark .cl-card *,
+        .dark .cl-footer *,
+        .dark .cl-footerAction *,
+        [class*="cl-footer"] *,
+        [class*="cl-internal"] {
+          background-color: ${navyTheme.bg} !important;
+        }
+        .dark .cl-formButtonPrimary,
+        .dark .cl-formButtonPrimary * {
+          background-color: ${navyTheme.gold} !important;
+          color: ${navyTheme.bgDark} !important;
+        }
+        .dark .cl-formFieldInput,
+        .dark .cl-input,
+        .dark [class*="cl-formFieldInput"],
+        .dark .cl-socialButtonsBlockButton {
+          background-color: ${navyTheme.bgLight} !important;
+        }
+        .dark .cl-footerActionLink {
+          color: ${navyTheme.gold} !important;
+          background-color: transparent !important;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
     // Function to fix Clerk styles
     const fixClerkStyles = () => {
       if (isFixing) return;
