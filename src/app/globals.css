@@ -82,18 +82,14 @@
 }
 
 .dark {
-  /* Deep navy background - sophisticated and modern */
   --background: #0f0f1a;
   --foreground: #f0ece4;
-  /* Cards slightly lighter for depth */
   --card: #1a1a2e;
   --card-foreground: #f0ece4;
   --popover: #1a1a2e;
   --popover-foreground: #f0ece4;
-  /* Gold accent as primary for luxury feel */
   --primary: #dfc08a;
   --primary-foreground: #0f0f1a;
-  /* Navy secondary */
   --secondary: #1a1a2e;
   --secondary-foreground: #f0ece4;
   --muted: #1a1a2e;
@@ -101,7 +97,6 @@
   --accent: #252540;
   --accent-foreground: #f0ece4;
   --destructive: oklch(0.65 0.2 25);
-  /* Subtle navy borders */
   --border: #2a2a45;
   --input: #1a1a2e;
   --ring: #dfc08a;
@@ -110,7 +105,6 @@
   --chart-3: #b8944f;
   --chart-4: #8a8a9a;
   --chart-5: #f0ece4;
-  /* Sidebar slightly darker for visual separation */
   --sidebar: #0a0a12;
   --sidebar-foreground: #f0ece4;
   --sidebar-primary: #dfc08a;
@@ -130,553 +124,54 @@
   }
 }
 
-/* Clerk component theming - follows app's light/dark mode */
+/* User button popover - light mode */
 .cl-userButtonPopoverCard,
 .cl-userButtonPopoverRootBox,
 .cl-userButtonPopoverMain {
   background-color: #ffffff !important;
   border: 1px solid #e5e5e5 !important;
-  border-radius: 0.5rem !important;
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
-}
-
-.cl-userButtonPopoverActionButton,
-.cl-userButtonPopoverActionButton__manageAccount,
-.cl-userButtonPopoverActionButton__signOut {
-  color: #171717 !important;
-}
-
-.cl-userButtonPopoverActionButtonText {
-  color: #171717 !important;
-}
-
-.cl-userButtonPopoverActionButtonIcon {
-  color: #737373 !important;
-}
-
-.cl-userButtonPopoverActionButton:hover {
-  background-color: #f5f5f5 !important;
-}
-
-.cl-userPreviewMainIdentifier {
-  color: #171717 !important;
-}
-
-.cl-userPreviewSecondaryIdentifier {
-  color: #737373 !important;
 }
 
 .cl-userButtonPopoverFooter {
   display: none !important;
 }
 
-/* Dark mode */
+/* User button popover - dark mode */
 .dark .cl-userButtonPopoverCard,
 .dark .cl-userButtonPopoverRootBox,
 .dark .cl-userButtonPopoverMain {
-  background-color: #2a2520 !important;
-  border-color: #3d3730 !important;
+  background-color: #1a1a2e !important;
+  border-color: #2a2a45 !important;
 }
 
 .dark .cl-userButtonPopoverActionButton,
-.dark .cl-userButtonPopoverActionButton__manageAccount,
-.dark .cl-userButtonPopoverActionButton__signOut,
-.dark .cl-userButtonPopoverActionButtonText {
-  color: #f5f5f0 !important;
-}
-
-.dark .cl-userButtonPopoverActionButtonIcon {
-  color: #a0a0a0 !important;
+.dark .cl-userButtonPopoverActionButtonText,
+.dark .cl-userPreviewMainIdentifier {
+  color: #f0ece4 !important;
 }
 
 .dark .cl-userButtonPopoverActionButton:hover {
-  background-color: #3d3730 !important;
-}
-
-.dark .cl-userPreviewMainIdentifier {
-  color: #f5f5f0 !important;
-}
-
-.dark .cl-userPreviewSecondaryIdentifier {
-  color: #a0a0a0 !important;
-}
-
-/* Clerk theme variables - respond to light/dark mode */
-:root {
-  --clerk-bg: #ffffff;
-  --clerk-bg-secondary: #f5f5f5;
-  --clerk-text: #171717;
-  --clerk-text-secondary: #737373;
-  --clerk-border: #e5e5e5;
-  --clerk-btn-bg: #171717;
-  --clerk-btn-text: #ffffff;
-  --clerk-hover: #f5f5f5;
-}
-
-:root.dark, .dark {
-  --clerk-bg: #0f0f1a;
-  --clerk-bg-secondary: #1a1a2e;
-  --clerk-text: #f0ece4;
-  --clerk-text-secondary: #8a8a9a;
-  --clerk-border: #2a2a45;
-  --clerk-btn-bg: #dfc08a;
-  --clerk-btn-text: #0f0f1a;
-  --clerk-hover: #1a1a2e;
-}
-
-/* Force color scheme on Clerk elements */
-[class*="cl-"] {
-  color-scheme: light !important;
-}
-
-/* Force Clerk auth cards to use navy theme */
-.dark .cl-card,
-.dark .cl-signIn-root,
-.dark .cl-signUp-root,
-.dark .cl-rootBox,
-.dark .cl-cardBox,
-.dark .cl-footer {
-  background-color: #1a1a2e !important;
-}
-
-.dark .cl-headerTitle,
-.dark .cl-headerSubtitle,
-.dark .cl-socialButtonsBlockButtonText,
-.dark .cl-dividerText,
-.dark .cl-formFieldLabel,
-.dark .cl-footerActionText,
-.dark .cl-footerActionLink {
-  color: #f0ece4 !important;
-}
-
-.dark .cl-socialButtonsBlockButton {
   background-color: #252540 !important;
-  border-color: #2a2a45 !important;
 }
 
-.dark .cl-formFieldInput {
-  background-color: #252540 !important;
-  border-color: #2a2a45 !important;
-  color: #f0ece4 !important;
-}
-
-.dark .cl-formButtonPrimary {
-  background-color: #dfc08a !important;
-  color: #0f0f1a !important;
-}
-
-.dark .cl-footerActionLink {
-  color: #dfc08a !important;
-}
-
-:root.dark [class*="cl-"],
-.dark [class*="cl-"] {
-  color-scheme: dark !important;
-}
-
-/* Modal/profile settings styling */
-.cl-modalContent,
-.cl-modalBackdrop + div,
-.cl-card,
-.cl-userProfile-root,
-.cl-profilePage-root,
-.cl-accountPage-root,
-.cl-rootBox,
-.cl-pageScrollBox,
-.cl-scrollBox,
-.cl-page,
-.cl-main,
-.cl-profilePage,
-.cl-profileSection__profile,
-.cl-profileSection__emailAddresses,
-.cl-profileSection__connectedAccounts,
-.cl-profileSection__danger {
-  background-color: #ffffff !important;
-  border-radius: 0.5rem !important;
-  color: #171717 !important;
-}
-
-/* Force all divs inside userProfile to be light */
-.cl-userProfile-root * {
-  background-color: transparent !important;
-}
-
-.cl-userProfile-root,
-.cl-userProfile-root > div,
-.cl-userProfile-root > div > div {
-  background-color: #ffffff !important;
-}
-
-.cl-navbar,
-.cl-navbarButtons,
-.cl-profileSection,
-.cl-profileSectionContent,
-.cl-formContainer,
-.cl-form,
-.cl-profileSectionHeader,
-.cl-profileSectionItemList,
-.cl-profileSectionItem,
-.cl-accordionContent,
-.cl-formFieldRow,
-.cl-identityPreview,
-.cl-identityPreviewEditButton,
-.cl-avatarBox {
-  background-color: #ffffff !important;
-}
-
-.cl-headerTitle,
-.cl-headerSubtitle,
-.cl-profileSectionTitle,
-.cl-profileSectionTitleText,
-.cl-navbarButton,
-.cl-formFieldLabel,
-.cl-formFieldLabelRow,
-.cl-accordionTriggerButton {
-  color: #171717 !important;
-}
-
-.cl-profileSectionPrimaryButton,
-.cl-formButtonPrimary {
-  background-color: #171717 !important;
-  color: #ffffff !important;
-}
-
-.cl-profileSectionPrimaryButton:hover,
-.cl-formButtonPrimary:hover {
-  background-color: #333333 !important;
-}
-
-.cl-navbarButton:hover,
-.cl-accordionTriggerButton:hover {
-  background-color: #f5f5f5 !important;
-}
-
-.cl-navbarButton[data-active="true"] {
-  background-color: #f0f0f0 !important;
-}
-
-.cl-menuButton,
-.cl-menuItem {
-  color: #171717 !important;
-}
-
-.cl-menuItem:hover {
-  background-color: #f5f5f5 !important;
-}
-
-/* Dark mode for profile/modal */
-:root.dark .cl-modalContent,
-:root.dark .cl-card,
-:root.dark .cl-userProfile-root,
-:root.dark .cl-profilePage-root,
-:root.dark .cl-accountPage-root,
-:root.dark .cl-rootBox,
-:root.dark .cl-pageScrollBox,
-:root.dark .cl-scrollBox,
-:root.dark .cl-page,
-:root.dark .cl-main,
-:root.dark .cl-profilePage,
-:root.dark .cl-profileSection__profile,
-:root.dark .cl-profileSection__emailAddresses,
-:root.dark .cl-profileSection__connectedAccounts,
-:root.dark .cl-profileSection__danger,
-.dark .cl-modalContent,
-.dark .cl-card,
+/* Profile modal - only in dark mode */
 .dark .cl-userProfile-root,
-.dark .cl-profilePage-root,
-.dark .cl-accountPage-root,
-.dark .cl-rootBox,
-.dark .cl-pageScrollBox,
-.dark .cl-scrollBox,
-.dark .cl-page,
-.dark .cl-main,
-.dark .cl-profilePage,
-.dark .cl-profileSection__profile,
-.dark .cl-profileSection__emailAddresses,
-.dark .cl-profileSection__connectedAccounts,
-.dark .cl-profileSection__danger {
-  background-color: #2a2520 !important;
-  color: #f5f5f0 !important;
-}
-
-.dark .cl-navbar,
-.dark .cl-navbarButtons,
-.dark .cl-profileSection,
-.dark .cl-profileSectionContent,
-.dark .cl-formContainer,
-.dark .cl-form,
-.dark .cl-profileSectionHeader,
-.dark .cl-profileSectionItemList,
-.dark .cl-profileSectionItem,
-.dark .cl-accordionContent,
-.dark .cl-formFieldRow,
-.dark .cl-identityPreview,
-.dark .cl-identityPreviewEditButton,
-.dark .cl-avatarBox {
-  background-color: #2a2520 !important;
-}
-
-.dark .cl-headerTitle,
-.dark .cl-headerSubtitle,
-.dark .cl-profileSectionTitle,
-.dark .cl-profileSectionTitleText,
-.dark .cl-navbarButton,
-.dark .cl-formFieldLabel,
-.dark .cl-formFieldLabelRow,
-.dark .cl-accordionTriggerButton {
-  color: #f5f5f0 !important;
-}
-
-.dark .cl-profileSectionPrimaryButton,
-.dark .cl-formButtonPrimary {
-  background-color: #f5f5f0 !important;
-  color: #2a2520 !important;
-}
-
-.dark .cl-profileSectionPrimaryButton:hover,
-.dark .cl-formButtonPrimary:hover {
-  background-color: #e5e5e0 !important;
-}
-
-.dark .cl-navbarButton:hover,
-.dark .cl-accordionTriggerButton:hover {
-  background-color: #3d3730 !important;
-}
-
-.dark .cl-navbarButton[data-active="true"] {
-  background-color: #3d3730 !important;
-}
-
-.dark .cl-menuButton,
-.dark .cl-menuItem {
-  color: #f5f5f0 !important;
-}
-
-.dark .cl-menuItem:hover {
-  background-color: #3d3730 !important;
-}
-
-.dark .cl-formFieldInput,
-.dark .cl-input {
-  background-color: #3d3730 !important;
-  border-color: #4d473f !important;
-  color: #f5f5f0 !important;
-}
-
-/* Force all divs inside userProfile to be dark mode colors */
-:root.dark .cl-userProfile-root *,
 .dark .cl-userProfile-root * {
-  background-color: transparent !important;
+  background-color: #1a1a2e !important;
+  color: #f0ece4 !important;
+  border-color: #2a2a45 !important;
 }
 
-:root.dark .cl-userProfile-root,
-:root.dark .cl-userProfile-root > div,
-:root.dark .cl-userProfile-root > div > div,
-.dark .cl-userProfile-root,
-.dark .cl-userProfile-root > div,
-.dark .cl-userProfile-root > div > div {
-  background-color: #2a2520 !important;
-}
-
-/* Catch-all for Clerk user profile modal - light mode */
-[data-clerk-component="UserProfile"] [class*="cl-"],
-.cl-userProfile-root [class*="cl-"],
-.cl-userProfile-root div,
-.cl-userProfile-root section {
-  background-color: #ffffff !important;
-  color: #171717 !important;
-}
-
-.cl-userProfile-root button:not(.cl-formButtonPrimary):not(.cl-profileSectionPrimaryButton) {
-  color: #171717 !important;
-}
-
-.cl-userProfile-root .cl-formButtonPrimary,
-.cl-userProfile-root .cl-profileSectionPrimaryButton {
-  background-color: #171717 !important;
-  color: #ffffff !important;
-}
-
-/* Catch-all for Clerk user profile modal - dark mode */
-.dark [data-clerk-component="UserProfile"] [class*="cl-"],
-.dark .cl-userProfile-root [class*="cl-"],
-.dark .cl-userProfile-root div,
-.dark .cl-userProfile-root section {
-  background-color: #2a2520 !important;
-  color: #f5f5f0 !important;
-}
-
-.dark .cl-userProfile-root button:not(.cl-formButtonPrimary):not(.cl-profileSectionPrimaryButton) {
-  color: #f5f5f0 !important;
+.dark .cl-userProfile-root input {
+  background-color: #252540 !important;
 }
 
 .dark .cl-userProfile-root .cl-formButtonPrimary,
 .dark .cl-userProfile-root .cl-profileSectionPrimaryButton {
-  background-color: #f5f5f0 !important;
-  color: #2a2520 !important;
+  background-color: #dfc08a !important;
+  color: #0f0f1a !important;
 }
 
-/* Target Clerk portal when html has dark class (for modal rendered outside body) */
-html.dark .cl-userProfile-root [class*="cl-"],
-html.dark .cl-userProfile-root div,
-html.dark .cl-userProfile-root section,
-html.dark .cl-modalContent,
-html.dark .cl-card,
-html.dark [data-clerk-component] {
-  background-color: #2a2520 !important;
-  color: #f5f5f0 !important;
-}
-
-html.dark .cl-userProfile-root .cl-formButtonPrimary,
-html.dark .cl-userProfile-root .cl-profileSectionPrimaryButton {
-  background-color: #f5f5f0 !important;
-  color: #2a2520 !important;
-}
-
-/* Override Clerk's internal theme - force all internal classes to inherit */
-[class*="cl-internal"] {
-  background-color: inherit !important;
-  color: inherit !important;
-}
-
-/* Force the add email button - nuclear reset */
-button.cl-profileSectionPrimaryButton__emailAddresses,
-button.cl-profileSectionPrimaryButton__phoneNumbers,
-button.cl-profileSectionPrimaryButton__connectedAccounts {
-  all: unset !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 0.5rem !important;
-  padding: 0.5rem 1rem !important;
-  border-radius: 0.375rem !important;
-  cursor: pointer !important;
-  background-color: var(--clerk-bg-secondary) !important;
-  color: var(--clerk-text) !important;
-  border: 1px solid var(--clerk-border) !important;
-  font-size: 0.875rem !important;
-  width: 100% !important;
-  box-sizing: border-box !important;
-}
-
-button.cl-profileSectionPrimaryButton__emailAddresses *,
-button.cl-profileSectionPrimaryButton__phoneNumbers *,
-button.cl-profileSectionPrimaryButton__connectedAccounts * {
-  color: inherit !important;
-}
-
-/* Ultimate fallback - use CSS variables for Clerk elements */
-.cl-userProfile-root,
-.cl-userProfile-root *:not(button):not(input):not(img):not(svg):not(path) {
-  background-color: var(--clerk-bg) !important;
-  color: var(--clerk-text) !important;
-}
-
-.cl-userProfile-root button:not(.cl-formButtonPrimary):not(.cl-profileSectionPrimaryButton) {
+.dark .cl-navbarButton {
   background-color: transparent !important;
-  color: var(--clerk-text) !important;
-}
-
-.cl-userProfile-root .cl-formButtonPrimary,
-.cl-userProfile-root .cl-profileSectionPrimaryButton {
-  background-color: var(--clerk-btn-bg) !important;
-  color: var(--clerk-btn-text) !important;
-}
-
-.cl-userProfile-root input,
-.cl-userProfile-root .cl-formFieldInput {
-  background-color: var(--clerk-bg-secondary) !important;
-  border-color: var(--clerk-border) !important;
-  color: var(--clerk-text) !important;
-}
-
-.cl-navbarButton:hover,
-.cl-accordionTriggerButton:hover,
-.cl-menuItem:hover {
-  background-color: var(--clerk-hover) !important;
-}
-
-.cl-navbarButton[data-active="true"] {
-  background-color: var(--clerk-hover) !important;
-}
-
-/* Add email/phone button styling */
-.cl-userProfile-root .cl-formButtonReset,
-.cl-userProfile-root [class*="actionCard"],
-.cl-userProfile-root [class*="alternativeMethods"],
-.cl-userProfile-root .cl-profileSectionItem__emailAddresses button,
-.cl-userProfile-root .cl-profileSectionItem__phoneNumbers button,
-.cl-menuList,
-.cl-menuItem,
-.cl-menuButton,
-.cl-actionCard,
-.cl-profileSection button[class*="cl-"],
-button[class*="cl-profileSection"],
-.cl-profileSectionContent button {
-  background-color: var(--clerk-bg-secondary) !important;
-  border-color: var(--clerk-border) !important;
-  color: var(--clerk-text) !important;
-}
-
-/* Specifically target the add button row */
-.cl-userProfile-root div[class*="cl-"] > button:not(.cl-profileSectionPrimaryButton):not(.cl-formButtonPrimary),
-.cl-profileSection__emailAddresses button:not(.cl-profileSectionPrimaryButton),
-.cl-profileSection__connectedAccounts button:not(.cl-profileSectionPrimaryButton) {
-  background-color: var(--clerk-bg-secondary) !important;
-  border-color: var(--clerk-border) !important;
-  color: var(--clerk-text) !important;
-}
-
-/* Nuclear option - force ALL elements in clerk profile to dark */
-.cl-userProfile-root button,
-.cl-userProfile-root input,
-.cl-userProfile-root [role="button"],
-.cl-userProfile-root a,
-.cl-userProfile-root span,
-.cl-userProfile-root div {
-  background-color: var(--clerk-bg) !important;
-  color: var(--clerk-text) !important;
-  border-color: var(--clerk-border) !important;
-}
-
-/* Re-apply specific button styles */
-.cl-userProfile-root .cl-formButtonPrimary,
-.cl-userProfile-root .cl-profileSectionPrimaryButton,
-.cl-userProfile-root button[class*="Primary"] {
-  background-color: var(--clerk-btn-bg) !important;
-  color: var(--clerk-btn-text) !important;
-}
-
-/* Make inputs slightly different shade */
-.cl-userProfile-root input,
-.cl-userProfile-root [class*="input"],
-.cl-userProfile-root [class*="Input"] {
-  background-color: var(--clerk-bg-secondary) !important;
-}
-
-/* Target the email addresses list specifically */
-.cl-profileSectionItemList,
-.cl-profileSectionItemList__emailAddresses,
-.cl-profileSectionItemList__phoneNumbers,
-.cl-profileSectionItemList__connectedAccounts,
-.cl-profileSectionItemList * {
-  background-color: var(--clerk-bg) !important;
-  color: var(--clerk-text) !important;
-  border-color: var(--clerk-border) !important;
-}
-
-/* Ghost variant buttons in profile */
-.cl-profileSectionPrimaryButton__emailAddresses,
-.cl-profileSectionPrimaryButton__phoneNumbers,
-.cl-profileSectionPrimaryButton__connectedAccounts,
-.cl-button__emailAddresses,
-button[data-variant="ghost"][data-color="primary"],
-.cl-userProfile-root button[data-variant="ghost"] {
-  background-color: var(--clerk-bg-secondary) !important;
-  color: var(--clerk-text) !important;
-  border-color: var(--clerk-border) !important;
-}
-
-.cl-userProfile-root .cl-badge {
-  background-color: var(--clerk-bg-secondary) !important;
-  color: var(--clerk-text) !important;
 }
