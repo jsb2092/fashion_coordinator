@@ -18,7 +18,11 @@ import {
   ITEM_STATUSES,
 } from "@/constants/categories";
 
-export function ItemFilters() {
+interface ItemFiltersProps {
+  hideHeader?: boolean;
+}
+
+export function ItemFilters({ hideHeader = false }: ItemFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -40,14 +44,21 @@ export function ItemFilters() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="font-semibold">Filters</h3>
-        {hasFilters && (
-          <Button variant="ghost" size="sm" onClick={clearFilters}>
-            Clear all
-          </Button>
-        )}
-      </div>
+      {!hideHeader && (
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold">Filters</h3>
+          {hasFilters && (
+            <Button variant="ghost" size="sm" onClick={clearFilters}>
+              Clear all
+            </Button>
+          )}
+        </div>
+      )}
+      {hideHeader && hasFilters && (
+        <Button variant="ghost" size="sm" onClick={clearFilters} className="w-full">
+          Clear all filters
+        </Button>
+      )}
 
       <div className="space-y-3">
         <div className="space-y-1.5">

@@ -23,9 +23,9 @@ export function MobileFilters() {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="outline" size="sm" className="relative">
+        <Button variant="outline" size="icon" className="relative h-9 w-9">
           <svg
-            className="h-4 w-4 mr-2"
+            className="h-4 w-4"
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth={2}
@@ -37,20 +37,20 @@ export function MobileFilters() {
               d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75"
             />
           </svg>
-          Filter
+          <span className="sr-only">Filter</span>
           {hasFilters && filterCount > 0 && (
-            <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center">
+            <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center">
               {filterCount}
             </span>
           )}
         </Button>
       </SheetTrigger>
-      <SheetContent side="right" className="w-[85vw] max-w-sm overflow-y-auto p-4">
-        <SheetHeader className="pb-4 border-b">
+      <SheetContent side="bottom" className="h-[85vh] rounded-t-xl">
+        <SheetHeader className="pb-4">
           <SheetTitle>Filter Items</SheetTitle>
         </SheetHeader>
-        <div className="pt-4">
-          <ItemFilters />
+        <div className="overflow-y-auto h-[calc(85vh-80px)] pb-8">
+          <ItemFilters hideHeader />
         </div>
       </SheetContent>
     </Sheet>
