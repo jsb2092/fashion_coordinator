@@ -3,7 +3,7 @@ import Image from "next/image";
 
 export default function SignUpPage() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#0f0f1a] px-4">
+    <div className="dark flex min-h-screen flex-col items-center justify-center bg-[#0f0f1a] px-4">
       {/* Logo and branding */}
       <div className="mb-8 flex flex-col items-center gap-4">
         <Image

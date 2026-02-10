@@ -229,6 +229,46 @@
   color-scheme: light !important;
 }
 
+/* Force Clerk auth cards to use navy theme */
+.dark .cl-card,
+.dark .cl-signIn-root,
+.dark .cl-signUp-root,
+.dark .cl-rootBox,
+.dark .cl-cardBox,
+.dark .cl-footer {
+  background-color: #1a1a2e !important;
+}
+
+.dark .cl-headerTitle,
+.dark .cl-headerSubtitle,
+.dark .cl-socialButtonsBlockButtonText,
+.dark .cl-dividerText,
+.dark .cl-formFieldLabel,
+.dark .cl-footerActionText,
+.dark .cl-footerActionLink {
+  color: #f0ece4 !important;
+}
+
+.dark .cl-socialButtonsBlockButton {
+  background-color: #252540 !important;
+  border-color: #2a2a45 !important;
+}
+
+.dark .cl-formFieldInput {
+  background-color: #252540 !important;
+  border-color: #2a2a45 !important;
+  color: #f0ece4 !important;
+}
+
+.dark .cl-formButtonPrimary {
+  background-color: #dfc08a !important;
+  color: #0f0f1a !important;
+}
+
+.dark .cl-footerActionLink {
+  color: #dfc08a !important;
+}
+
 :root.dark [class*="cl-"],
 .dark [class*="cl-"] {
   color-scheme: dark !important;
