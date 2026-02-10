@@ -27,45 +27,59 @@ export function ClerkStyleFix() {
     }
 
     style.textContent = `
-      /* Target ALL clerk elements and their descendants */
-      [class*="cl-"],
-      [class*="cl-"] *,
-      [class*="cl-"]::before,
-      [class*="cl-"]::after,
-      [class*="cl-"] *::before,
-      [class*="cl-"] *::after,
-      [data-clerk-component],
-      [data-clerk-component] *,
-      [data-clerk-component] *::before,
-      [data-clerk-component] *::after {
+      /* Base: navy background for clerk containers */
+      .cl-rootBox,
+      .cl-card,
+      .cl-cardBox,
+      .cl-signIn-root,
+      .cl-signUp-root,
+      .cl-footer,
+      .cl-footerAction,
+      .cl-main,
+      [class*="cl-footer"],
+      [class*="cl-internal"] {
         background-color: ${navyTheme.bg} !important;
         border-color: ${navyTheme.border} !important;
       }
 
-      /* Primary buttons */
+      /* Primary buttons - GOLD - high specificity */
       .cl-formButtonPrimary,
-      .cl-formButtonPrimary *,
-      [class*="cl-formButtonPrimary"],
-      [class*="cl-formButtonPrimary"] * {
+      button.cl-formButtonPrimary,
+      [class*="cl-formButtonPrimary"] {
         background-color: ${navyTheme.gold} !important;
+        color: ${navyTheme.bgDark} !important;
+        border-color: ${navyTheme.gold} !important;
+      }
+      .cl-formButtonPrimary span,
+      .cl-formButtonPrimary div,
+      button.cl-formButtonPrimary span,
+      button.cl-formButtonPrimary div {
+        background-color: transparent !important;
         color: ${navyTheme.bgDark} !important;
       }
 
-      /* Inputs and social buttons need lighter bg */
+      /* Inputs need lighter bg */
       .cl-formFieldInput,
       .cl-input,
-      [class*="formFieldInput"],
+      input[class*="cl-"] {
+        background-color: ${navyTheme.bgLight} !important;
+        border-color: ${navyTheme.border} !important;
+        color: ${navyTheme.text} !important;
+      }
+
+      /* Social buttons need lighter bg */
       .cl-socialButtonsBlockButton,
       [class*="socialButtonsBlockButton"] {
         background-color: ${navyTheme.bgLight} !important;
+        border-color: ${navyTheme.border} !important;
       }
 
       /* Text colors */
-      [class*="cl-"] span,
-      [class*="cl-"] p,
-      [class*="cl-"] label,
-      [class*="cl-header"],
-      [class*="cl-footer"] {
+      .cl-headerTitle,
+      .cl-headerSubtitle,
+      .cl-dividerText,
+      .cl-formFieldLabel,
+      .cl-footerActionText {
         color: ${navyTheme.text} !important;
       }
 
