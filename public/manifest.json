@@ -1,0 +1,24 @@
+{
+  "name": "Outfit IQ",
+  "short_name": "Outfit IQ",
+  "description": "AI-powered wardrobe management and outfit suggestions",
+  "start_url": "/wardrobe",
+  "display": "standalone",
+  "background_color": "#2a2520",
+  "theme_color": "#2a2520",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

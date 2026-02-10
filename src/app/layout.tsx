@@ -5,6 +5,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { ClerkStyleFix } from "@/components/clerk-style-fix";
+import { ServiceWorkerRegister } from "@/components/service-worker-register";
 import "./globals.css";
 
 // Use CSS variables so Clerk responds to theme changes
@@ -149,6 +150,19 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Outfit IQ",
   description: "AI-powered wardrobe management and outfit suggestions",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Outfit IQ",
+  },
+  icons: {
+    icon: "/icon-192.png",
+    apple: "/apple-touch-icon.png",
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
 };
 
 export default function RootLayout({
@@ -181,6 +195,7 @@ export default function RootLayout({
             {children}
             <Toaster />
             <ClerkStyleFix />
+            <ServiceWorkerRegister />
           </ThemeProvider>
         </body>
       </html>
