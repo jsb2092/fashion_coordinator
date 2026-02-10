@@ -24,6 +24,9 @@ const clerkAuthAppearance = {
     colorPrimary: navyTheme.gold,
   },
   elements: {
+    rootBox: {
+      backgroundColor: "transparent",
+    },
     card: {
       backgroundColor: navyTheme.bgCard,
       borderColor: navyTheme.border,
@@ -31,10 +34,17 @@ const clerkAuthAppearance = {
     cardBox: {
       backgroundColor: navyTheme.bgCard,
     },
+    main: {
+      backgroundColor: navyTheme.bgCard,
+    },
     formFieldInput: {
       backgroundColor: navyTheme.bgInput,
       borderColor: navyTheme.border,
       color: navyTheme.text,
+    },
+    formFieldInputGroup: {
+      backgroundColor: navyTheme.bgInput,
+      borderColor: navyTheme.border,
     },
     formButtonPrimary: {
       backgroundColor: navyTheme.gold,
@@ -63,6 +73,9 @@ const clerkAuthAppearance = {
     formFieldLabel: {
       color: navyTheme.text,
     },
+    footer: {
+      backgroundColor: navyTheme.bgCard,
+    },
     footerAction: {
       backgroundColor: navyTheme.bgCard,
     },
@@ -71,6 +84,15 @@ const clerkAuthAppearance = {
     },
     footerActionLink: {
       color: navyTheme.gold,
+    },
+    footerItem: {
+      backgroundColor: navyTheme.bgCard,
+    },
+    footerPages: {
+      backgroundColor: navyTheme.bgCard,
+    },
+    footerPagesLink: {
+      color: navyTheme.textMuted,
     },
     identityPreviewText: {
       color: navyTheme.text,
