@@ -2,47 +2,11 @@ const sharp = require('sharp');
 const fs = require('fs');
 const path = require('path');
 
-// Simple, modern hanger icon with "IQ" text
-const svgIcon = `
-<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#3d3730"/>
-      <stop offset="100%" style="stop-color:#2a2520"/>
-    </linearGradient>
-  </defs>
-
-  <!-- Background -->
-  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
-
-  <!-- Hanger shape -->
-  <g transform="translate(256, 200)">
-    <!-- Hook -->
-    <path d="M0,-80 Q30,-80 30,-50 Q30,-20 0,-20"
-          stroke="#f5f5f0" stroke-width="20" fill="none" stroke-linecap="round"/>
-    <!-- Arms -->
-    <path d="M0,0 L-140,100"
-          stroke="#f5f5f0" stroke-width="20" fill="none" stroke-linecap="round"/>
-    <path d="M0,0 L140,100"
-          stroke="#f5f5f0" stroke-width="20" fill="none" stroke-linecap="round"/>
-    <!-- Bottom bar -->
-    <path d="M-140,100 L140,100"
-          stroke="#f5f5f0" stroke-width="20" fill="none" stroke-linecap="round"/>
-  </g>
-
-  <!-- IQ text -->
-  <text x="256" y="440"
-        font-family="system-ui, -apple-system, sans-serif"
-        font-size="80"
-        font-weight="700"
-        fill="#f5f5f0"
-        text-anchor="middle">IQ</text>
-</svg>
-`;
+// Read the designed icon SVG
+const publicDir = path.join(__dirname, '..', 'public');
+const svgIcon = fs.readFileSync(path.join(publicDir, 'outfit-iq-icon.svg'), 'utf8');
 
 async function generateIcons() {
-  const publicDir = path.join(__dirname, '..', 'public');
-
   // Ensure public directory exists
   if (!fs.existsSync(publicDir)) {
     fs.mkdirSync(publicDir, { recursive: true });
