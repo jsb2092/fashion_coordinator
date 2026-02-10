@@ -6,16 +6,97 @@ export function ClerkStyleFix() {
   useEffect(() => {
     let isFixing = false;
 
-    // Function to fix Clerk button styles
+    // Navy theme colors
+    const navyTheme = {
+      bg: "#1a1a2e",
+      bgDark: "#0f0f1a",
+      bgLight: "#252540",
+      text: "#f0ece4",
+      textMuted: "#8a8a9a",
+      border: "#2a2a45",
+      gold: "#dfc08a",
+    };
+
+    // Function to fix Clerk styles
     const fixClerkStyles = () => {
       if (isFixing) return;
       isFixing = true;
 
-      const isDark = document.documentElement.classList.contains("dark");
-      const bgColor = isDark ? "#3d3730" : "#f5f5f5";
-      const bgMain = isDark ? "#2a2520" : "#ffffff";
-      const textColor = isDark ? "#f5f5f0" : "#171717";
-      const borderColor = isDark ? "#4d473f" : "#e5e5e5";
+      const isDark = document.documentElement.classList.contains("dark") ||
+                     document.querySelector('.dark') !== null;
+
+      // Fix auth cards (sign-in, sign-up)
+      const cards = document.querySelectorAll('.cl-card, .cl-signIn-root, .cl-signUp-root, .cl-rootBox');
+      cards.forEach((card) => {
+        const el = card as HTMLElement;
+        if (isDark || el.closest('.dark')) {
+          el.style.setProperty("background-color", navyTheme.bg, "important");
+          el.style.setProperty("border-color", navyTheme.border, "important");
+        }
+      });
+
+      // Fix card boxes and content
+      const cardBoxes = document.querySelectorAll('.cl-cardBox, .cl-main, .cl-footer, .cl-footerAction');
+      cardBoxes.forEach((box) => {
+        const el = box as HTMLElement;
+        if (isDark || el.closest('.dark')) {
+          el.style.setProperty("background-color", navyTheme.bg, "important");
+        }
+      });
+
+      // Fix text colors
+      const textElements = document.querySelectorAll('.cl-headerTitle, .cl-headerSubtitle, .cl-dividerText, .cl-formFieldLabel, .cl-footerActionText');
+      textElements.forEach((text) => {
+        const el = text as HTMLElement;
+        if (isDark || el.closest('.dark')) {
+          el.style.setProperty("color", navyTheme.text, "important");
+        }
+      });
+
+      // Fix inputs
+      const inputs = document.querySelectorAll('.cl-formFieldInput, .cl-input');
+      inputs.forEach((input) => {
+        const el = input as HTMLElement;
+        if (isDark || el.closest('.dark')) {
+          el.style.setProperty("background-color", navyTheme.bgLight, "important");
+          el.style.setProperty("border-color", navyTheme.border, "important");
+          el.style.setProperty("color", navyTheme.text, "important");
+        }
+      });
+
+      // Fix social buttons
+      const socialButtons = document.querySelectorAll('.cl-socialButtonsBlockButton, .cl-socialButtonsIconButton');
+      socialButtons.forEach((btn) => {
+        const el = btn as HTMLElement;
+        if (isDark || el.closest('.dark')) {
+          el.style.setProperty("background-color", navyTheme.bgLight, "important");
+          el.style.setProperty("border-color", navyTheme.border, "important");
+          el.style.setProperty("color", navyTheme.text, "important");
+        }
+      });
+
+      // Fix primary buttons (Continue, etc.)
+      const primaryButtons = document.querySelectorAll('.cl-formButtonPrimary');
+      primaryButtons.forEach((btn) => {
+        const el = btn as HTMLElement;
+        if (isDark || el.closest('.dark')) {
+          el.style.setProperty("background-color", navyTheme.gold, "important");
+          el.style.setProperty("color", navyTheme.bgDark, "important");
+        }
+      });
+
+      // Fix footer links
+      const footerLinks = document.querySelectorAll('.cl-footerActionLink');
+      footerLinks.forEach((link) => {
+        const el = link as HTMLElement;
+        if (isDark || el.closest('.dark')) {
+          el.style.setProperty("color", navyTheme.gold, "important");
+        }
+      });
+      const bgColor = isDark ? navyTheme.bgLight : "#f5f5f5";
+      const bgMain = isDark ? navyTheme.bg : "#ffffff";
+      const textColor = isDark ? navyTheme.text : "#171717";
+      const borderColor = isDark ? navyTheme.border : "#e5e5e5";
 
       // Fix add email/phone buttons
       const addButtons = document.querySelectorAll(
