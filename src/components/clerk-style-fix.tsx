@@ -102,6 +102,29 @@ export function ClerkStyleFix() {
         el.style.setProperty("background-color", "transparent", "important");
       });
 
+      // Fix the gray boxes on sides of footer - target footer row and ALL its children/siblings
+      const footerAction = document.querySelector('.cl-footerAction');
+      if (footerAction) {
+        const parent = footerAction.parentElement;
+        if (parent) {
+          // Fix parent and all siblings
+          parent.style.setProperty("background-color", navyTheme.bg, "important");
+          Array.from(parent.children).forEach((child) => {
+            const el = child as HTMLElement;
+            el.style.setProperty("background-color", navyTheme.bg, "important");
+          });
+          // Also check grandparent
+          const grandparent = parent.parentElement;
+          if (grandparent) {
+            grandparent.style.setProperty("background-color", navyTheme.bg, "important");
+            Array.from(grandparent.children).forEach((child) => {
+              const el = child as HTMLElement;
+              el.style.setProperty("background-color", navyTheme.bg, "important");
+            });
+          }
+        }
+      }
+
       const bgColor = navyTheme.bgLight;
       const bgMain = navyTheme.bg;
       const textColor = navyTheme.text;
