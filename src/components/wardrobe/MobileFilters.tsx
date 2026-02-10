@@ -45,11 +45,11 @@ export function MobileFilters() {
           )}
         </Button>
       </SheetTrigger>
-      <SheetContent side="right" className="w-80 overflow-y-auto">
-        <SheetHeader>
+      <SheetContent side="right" className="w-[85vw] max-w-sm overflow-y-auto p-4">
+        <SheetHeader className="pb-4 border-b">
           <SheetTitle>Filter Items</SheetTitle>
         </SheetHeader>
-        <div className="mt-6">
+        <div className="pt-4">
           <ItemFilters />
         </div>
       </SheetContent>
