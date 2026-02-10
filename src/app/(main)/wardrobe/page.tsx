@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getWardrobeItems } from "@/lib/actions";
 import { WardrobeGrid } from "@/components/wardrobe/WardrobeGrid";
 import { ItemFilters } from "@/components/wardrobe/ItemFilters";
+import { MobileFilters } from "@/components/wardrobe/MobileFilters";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -63,24 +64,31 @@ export default async function WardrobePage({ searchParams }: PageProps) {
               Manage your clothing collection
             </p>
           </div>
-          <Link href="/wardrobe/upload">
-            <Button>
-              <svg
-                className="h-4 w-4 mr-2"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2}
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 4.5v15m7.5-7.5h-15"
-                />
-              </svg>
-              Add Item
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            {/* Mobile filter button */}
+            <div className="lg:hidden">
+              <MobileFilters />
+            </div>
+            <Link href="/wardrobe/upload">
+              <Button>
+                <svg
+                  className="h-4 w-4 mr-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={2}
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 4.5v15m7.5-7.5h-15"
+                  />
+                </svg>
+                <span className="hidden sm:inline">Add Item</span>
+                <span className="sm:hidden">Add</span>
+              </Button>
+            </Link>
+          </div>
         </div>
         <Suspense fallback={<WardrobeSkeleton />}>
           <WardrobeContent searchParams={searchParams} />
