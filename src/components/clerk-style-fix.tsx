@@ -44,6 +44,18 @@ export function ClerkStyleFix() {
         }
       });
 
+      // Fix ALL footer elements (including "Secured by clerk")
+      const footerElements = document.querySelectorAll('[class*="cl-footer"], [class*="cl-internal-"]');
+      footerElements.forEach((el) => {
+        const htmlEl = el as HTMLElement;
+        if (isDark || htmlEl.closest('.dark')) {
+          const classList = htmlEl.className;
+          if (classList.includes('footer') || classList.includes('Footer')) {
+            htmlEl.style.setProperty("background-color", navyTheme.bg, "important");
+          }
+        }
+      });
+
       // Fix text colors
       const textElements = document.querySelectorAll('.cl-headerTitle, .cl-headerSubtitle, .cl-dividerText, .cl-formFieldLabel, .cl-footerActionText');
       textElements.forEach((text) => {
@@ -53,14 +65,24 @@ export function ClerkStyleFix() {
         }
       });
 
-      // Fix inputs
-      const inputs = document.querySelectorAll('.cl-formFieldInput, .cl-input');
+      // Fix inputs and their containers
+      const inputs = document.querySelectorAll('.cl-formFieldInput, .cl-input, [class*="cl-formFieldInput"]');
       inputs.forEach((input) => {
         const el = input as HTMLElement;
         if (isDark || el.closest('.dark')) {
           el.style.setProperty("background-color", navyTheme.bgLight, "important");
           el.style.setProperty("border-color", navyTheme.border, "important");
           el.style.setProperty("color", navyTheme.text, "important");
+        }
+      });
+
+      // Fix input group wrappers
+      const inputGroups = document.querySelectorAll('[class*="formFieldInputGroup"], [class*="formFieldRow"], [class*="inputGroup"]');
+      inputGroups.forEach((group) => {
+        const el = group as HTMLElement;
+        if (isDark || el.closest('.dark')) {
+          el.style.setProperty("background-color", navyTheme.bgLight, "important");
+          el.style.setProperty("border-color", navyTheme.border, "important");
         }
       });
 
@@ -93,6 +115,23 @@ export function ClerkStyleFix() {
           el.style.setProperty("color", navyTheme.gold, "important");
         }
       });
+
+      // Fix "Secured by Clerk" and any internal footer elements
+      const internalElements = document.querySelectorAll('[class*="cl-internal"]');
+      internalElements.forEach((el) => {
+        const htmlEl = el as HTMLElement;
+        if (isDark || htmlEl.closest('.dark')) {
+          // Check if it's in a footer context or has a gray-ish background
+          const computed = window.getComputedStyle(htmlEl);
+          const bg = computed.backgroundColor;
+          // If it has any non-transparent background that isn't navy, fix it
+          if (bg && bg !== 'transparent' && bg !== 'rgba(0, 0, 0, 0)' &&
+              !bg.includes('26, 26, 46') && !bg.includes('15, 15, 26')) {
+            htmlEl.style.setProperty("background-color", navyTheme.bg, "important");
+          }
+        }
+      });
+
       const bgColor = isDark ? navyTheme.bgLight : "#f5f5f5";
       const bgMain = isDark ? navyTheme.bg : "#ffffff";
       const textColor = isDark ? navyTheme.text : "#171717";
