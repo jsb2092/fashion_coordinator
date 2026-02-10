@@ -15,6 +15,7 @@
     "@aws-sdk/s3-presigned-post": "^3.981.0",
     "@aws-sdk/s3-request-presigner": "^3.981.0",
     "@clerk/nextjs": "^6.37.1",
+    "@clerk/themes": "^2.4.51",
     "@prisma/client": "^5.22.0",
     "@stripe/stripe-js": "^8.7.0",
     "class-variance-authority": "^0.7.1",

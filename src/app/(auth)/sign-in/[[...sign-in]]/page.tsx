@@ -1,4 +1,5 @@
 import { SignIn } from "@clerk/nextjs";
+import { dark } from "@clerk/themes";
 import Image from "next/image";
 
 const navyTheme = {
@@ -13,6 +14,7 @@ const navyTheme = {
 };
 
 const clerkAuthAppearance = {
+  baseTheme: dark,
   variables: {
     colorBackground: navyTheme.bgCard,
     colorText: navyTheme.text,
