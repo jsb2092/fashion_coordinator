@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { UserButton } from "@clerk/nextjs";
@@ -237,9 +238,18 @@ export function AppSidebar({ subscriptionTier = "free" }: AppSidebarProps) {
 
   const sidebarContent = (
     <>
-      <div className="flex h-16 items-center border-b px-6 justify-between">
+      <div className="flex h-16 items-center border-b px-4 justify-between">
         <Link href="/wardrobe" className="flex items-center gap-2" onClick={() => setMobileMenuOpen(false)}>
-          <span className="text-xl font-semibold">Outfit IQ</span>
+          <Image
+            src="/outfit-iq-icon.svg"
+            alt="Outfit IQ"
+            width={36}
+            height={36}
+            className="rounded-lg"
+          />
+          <span className="text-lg font-semibold bg-gradient-to-r from-[#c9a96e] via-[#dfc08a] to-[#b8944f] bg-clip-text text-transparent">
+            Outfit IQ
+          </span>
           {isPro && (
             <span className="text-xs font-medium bg-primary text-primary-foreground px-1.5 py-0.5 rounded">
               PRO
@@ -328,7 +338,16 @@ export function AppSidebar({ subscriptionTier = "free" }: AppSidebarProps) {
       {/* Mobile header with hamburger */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-40 flex h-14 items-center justify-between border-b bg-background px-4">
         <Link href="/wardrobe" className="flex items-center gap-2">
-          <span className="text-lg font-semibold">Outfit IQ</span>
+          <Image
+            src="/outfit-iq-icon.svg"
+            alt="Outfit IQ"
+            width={32}
+            height={32}
+            className="rounded-lg"
+          />
+          <span className="text-base font-semibold bg-gradient-to-r from-[#c9a96e] via-[#dfc08a] to-[#b8944f] bg-clip-text text-transparent">
+            Outfit IQ
+          </span>
           {isPro && (
             <span className="text-xs font-medium bg-primary text-primary-foreground px-1.5 py-0.5 rounded">
               PRO

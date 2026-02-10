@@ -82,43 +82,43 @@
 }
 
 .dark {
-  /* Warm charcoal background - elegant, not harsh black */
-  --background: oklch(0.18 0.01 60);
-  --foreground: oklch(0.95 0.01 90);
-  /* Cards slightly lighter than background for depth */
-  --card: oklch(0.22 0.01 60);
-  --card-foreground: oklch(0.95 0.01 90);
-  --popover: oklch(0.22 0.01 60);
-  --popover-foreground: oklch(0.95 0.01 90);
-  /* Cream/off-white primary for fashion-forward feel */
-  --primary: oklch(0.92 0.02 90);
-  --primary-foreground: oklch(0.18 0.01 60);
-  /* Warm gray secondary */
-  --secondary: oklch(0.28 0.01 60);
-  --secondary-foreground: oklch(0.92 0.01 90);
-  --muted: oklch(0.28 0.01 60);
-  --muted-foreground: oklch(0.65 0.01 60);
-  --accent: oklch(0.30 0.015 60);
-  --accent-foreground: oklch(0.95 0.01 90);
+  /* Deep navy background - sophisticated and modern */
+  --background: #0f0f1a;
+  --foreground: #f0ece4;
+  /* Cards slightly lighter for depth */
+  --card: #1a1a2e;
+  --card-foreground: #f0ece4;
+  --popover: #1a1a2e;
+  --popover-foreground: #f0ece4;
+  /* Gold accent as primary for luxury feel */
+  --primary: #dfc08a;
+  --primary-foreground: #0f0f1a;
+  /* Navy secondary */
+  --secondary: #1a1a2e;
+  --secondary-foreground: #f0ece4;
+  --muted: #1a1a2e;
+  --muted-foreground: #8a8a9a;
+  --accent: #252540;
+  --accent-foreground: #f0ece4;
   --destructive: oklch(0.65 0.2 25);
-  /* Subtle warm borders */
-  --border: oklch(0.35 0.01 60);
-  --input: oklch(0.30 0.01 60);
-  --ring: oklch(0.55 0.02 60);
-  --chart-1: oklch(0.65 0.15 40);
-  --chart-2: oklch(0.60 0.12 180);
-  --chart-3: oklch(0.70 0.15 70);
-  --chart-4: oklch(0.60 0.18 300);
-  --chart-5: oklch(0.65 0.20 20);
-  /* Sidebar slightly different for visual separation */
-  --sidebar: oklch(0.16 0.01 60);
-  --sidebar-foreground: oklch(0.92 0.01 90);
-  --sidebar-primary: oklch(0.85 0.04 70);
-  --sidebar-primary-foreground: oklch(0.18 0.01 60);
-  --sidebar-accent: oklch(0.25 0.01 60);
-  --sidebar-accent-foreground: oklch(0.92 0.01 90);
-  --sidebar-border: oklch(0.30 0.01 60);
-  --sidebar-ring: oklch(0.55 0.02 60);
+  /* Subtle navy borders */
+  --border: #2a2a45;
+  --input: #1a1a2e;
+  --ring: #dfc08a;
+  --chart-1: #dfc08a;
+  --chart-2: #c9a96e;
+  --chart-3: #b8944f;
+  --chart-4: #8a8a9a;
+  --chart-5: #f0ece4;
+  /* Sidebar slightly darker for visual separation */
+  --sidebar: #0a0a12;
+  --sidebar-foreground: #f0ece4;
+  --sidebar-primary: #dfc08a;
+  --sidebar-primary-foreground: #0f0f1a;
+  --sidebar-accent: #1a1a2e;
+  --sidebar-accent-foreground: #f0ece4;
+  --sidebar-border: #2a2a45;
+  --sidebar-ring: #dfc08a;
 }
 
 @layer base {
@@ -214,14 +214,14 @@
 }
 
 :root.dark, .dark {
-  --clerk-bg: #2a2520;
-  --clerk-bg-secondary: #3d3730;
-  --clerk-text: #f5f5f0;
-  --clerk-text-secondary: #a0a0a0;
-  --clerk-border: #4d473f;
-  --clerk-btn-bg: #f5f5f0;
-  --clerk-btn-text: #2a2520;
-  --clerk-hover: #3d3730;
+  --clerk-bg: #0f0f1a;
+  --clerk-bg-secondary: #1a1a2e;
+  --clerk-text: #f0ece4;
+  --clerk-text-secondary: #8a8a9a;
+  --clerk-border: #2a2a45;
+  --clerk-btn-bg: #dfc08a;
+  --clerk-btn-text: #0f0f1a;
+  --clerk-hover: #1a1a2e;
 }
 
 /* Force color scheme on Clerk elements */
