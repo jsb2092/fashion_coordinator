@@ -17,42 +17,72 @@ export function ClerkStyleFix() {
       gold: "#dfc08a",
     };
 
-    // Inject a style tag for broad CSS coverage
+    // Inject a style tag for broad CSS coverage - NO .dark dependency
     const styleId = 'clerk-navy-fix';
-    if (!document.getElementById(styleId)) {
-      const style = document.createElement('style');
+    let style = document.getElementById(styleId) as HTMLStyleElement;
+    if (!style) {
+      style = document.createElement('style');
       style.id = styleId;
-      style.textContent = `
-        .dark [data-clerk-component] *,
-        .dark [class*="cl-"] *,
-        .dark .cl-rootBox *,
-        .dark .cl-signIn-root *,
-        .dark .cl-signUp-root *,
-        .dark .cl-card *,
-        .dark .cl-footer *,
-        .dark .cl-footerAction *,
-        [class*="cl-footer"] *,
-        [class*="cl-internal"] {
-          background-color: ${navyTheme.bg} !important;
-        }
-        .dark .cl-formButtonPrimary,
-        .dark .cl-formButtonPrimary * {
-          background-color: ${navyTheme.gold} !important;
-          color: ${navyTheme.bgDark} !important;
-        }
-        .dark .cl-formFieldInput,
-        .dark .cl-input,
-        .dark [class*="cl-formFieldInput"],
-        .dark .cl-socialButtonsBlockButton {
-          background-color: ${navyTheme.bgLight} !important;
-        }
-        .dark .cl-footerActionLink {
-          color: ${navyTheme.gold} !important;
-          background-color: transparent !important;
-        }
-      `;
       document.head.appendChild(style);
     }
+
+    style.textContent = `
+      /* Target ALL clerk elements and their descendants */
+      [class*="cl-"],
+      [class*="cl-"] *,
+      [class*="cl-"]::before,
+      [class*="cl-"]::after,
+      [class*="cl-"] *::before,
+      [class*="cl-"] *::after,
+      [data-clerk-component],
+      [data-clerk-component] *,
+      [data-clerk-component] *::before,
+      [data-clerk-component] *::after {
+        background-color: ${navyTheme.bg} !important;
+        border-color: ${navyTheme.border} !important;
+      }
+
+      /* Primary buttons */
+      .cl-formButtonPrimary,
+      .cl-formButtonPrimary *,
+      [class*="cl-formButtonPrimary"],
+      [class*="cl-formButtonPrimary"] * {
+        background-color: ${navyTheme.gold} !important;
+        color: ${navyTheme.bgDark} !important;
+      }
+
+      /* Inputs and social buttons need lighter bg */
+      .cl-formFieldInput,
+      .cl-input,
+      [class*="formFieldInput"],
+      .cl-socialButtonsBlockButton,
+      [class*="socialButtonsBlockButton"] {
+        background-color: ${navyTheme.bgLight} !important;
+      }
+
+      /* Text colors */
+      [class*="cl-"] span,
+      [class*="cl-"] p,
+      [class*="cl-"] label,
+      [class*="cl-header"],
+      [class*="cl-footer"] {
+        color: ${navyTheme.text} !important;
+      }
+
+      /* Footer link gold */
+      .cl-footerActionLink,
+      [class*="footerActionLink"] {
+        color: ${navyTheme.gold} !important;
+        background-color: transparent !important;
+      }
+
+      /* Make sure SVGs/images are not affected */
+      [class*="cl-"] svg,
+      [class*="cl-"] img,
+      [class*="cl-"] path {
+        background-color: transparent !important;
+      }
+    `;
 
     // Function to fix Clerk styles
     const fixClerkStyles = () => {
