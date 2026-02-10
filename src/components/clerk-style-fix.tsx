@@ -27,32 +27,11 @@ export function ClerkStyleFix() {
     }
 
     style.textContent = `
-      /* Base: navy background for ALL clerk elements */
-      [class*="cl-"]:not(.cl-formButtonPrimary):not([class*="formButtonPrimary"]) {
+      /* Nuclear: ALL clerk elements get navy */
+      [class*="cl-"],
+      [class*="cl-"] * {
         background-color: ${navyTheme.bg} !important;
         border-color: ${navyTheme.border} !important;
-      }
-
-      /* All descendants too, except buttons */
-      [class*="cl-"] *:not(.cl-formButtonPrimary):not([class*="formButtonPrimary"]):not(button):not(svg):not(img):not(path) {
-        background-color: ${navyTheme.bg} !important;
-      }
-
-      /* Primary buttons - GOLD - highest specificity */
-      button.cl-formButtonPrimary,
-      .cl-formButtonPrimary,
-      [class*="cl-formButtonPrimary"],
-      [class*="cl-"] button[class*="Primary"],
-      .cl-card button.cl-formButtonPrimary {
-        background-color: ${navyTheme.gold} !important;
-        color: ${navyTheme.bgDark} !important;
-        border-color: ${navyTheme.gold} !important;
-      }
-      button.cl-formButtonPrimary *,
-      .cl-formButtonPrimary *,
-      [class*="cl-formButtonPrimary"] * {
-        background-color: transparent !important;
-        color: ${navyTheme.bgDark} !important;
       }
 
       /* Inputs need lighter bg */
@@ -60,15 +39,12 @@ export function ClerkStyleFix() {
       .cl-input,
       input[class*="cl-"] {
         background-color: ${navyTheme.bgLight} !important;
-        border-color: ${navyTheme.border} !important;
-        color: ${navyTheme.text} !important;
       }
 
       /* Social buttons need lighter bg */
       .cl-socialButtonsBlockButton,
       [class*="socialButtonsBlockButton"] {
         background-color: ${navyTheme.bgLight} !important;
-        border-color: ${navyTheme.border} !important;
       }
 
       /* Text colors */
@@ -76,7 +52,9 @@ export function ClerkStyleFix() {
       .cl-headerSubtitle,
       .cl-dividerText,
       .cl-formFieldLabel,
-      .cl-footerActionText {
+      .cl-footerActionText,
+      [class*="cl-"] span,
+      [class*="cl-"] p {
         color: ${navyTheme.text} !important;
       }
 
@@ -87,7 +65,7 @@ export function ClerkStyleFix() {
         background-color: transparent !important;
       }
 
-      /* Make sure SVGs/images are not affected */
+      /* SVGs/images transparent */
       [class*="cl-"] svg,
       [class*="cl-"] img,
       [class*="cl-"] path {
@@ -269,6 +247,21 @@ export function ClerkStyleFix() {
       navbar.forEach((el) => {
         const htmlEl = el as HTMLElement;
         htmlEl.style.setProperty("background-color", bgMain, "important");
+      });
+
+      // FINAL PASS: Fix primary button - must be last to override everything
+      const primaryButtons = document.querySelectorAll('.cl-formButtonPrimary, [class*="formButtonPrimary"]');
+      primaryButtons.forEach((btn) => {
+        const el = btn as HTMLElement;
+        el.style.setProperty("background-color", navyTheme.gold, "important");
+        el.style.setProperty("color", navyTheme.bgDark, "important");
+        el.style.setProperty("border-color", navyTheme.gold, "important");
+        // Fix all children of the button too
+        el.querySelectorAll("*").forEach((child) => {
+          const childEl = child as HTMLElement;
+          childEl.style.setProperty("background-color", "transparent", "important");
+          childEl.style.setProperty("color", navyTheme.bgDark, "important");
+        });
       });
 
       isFixing = false;
