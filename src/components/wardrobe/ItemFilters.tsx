@@ -60,7 +60,7 @@ export function ItemFilters({ hideHeader = false }: ItemFiltersProps) {
         </Button>
       )}
 
-      <div className="space-y-3">
+      <div className="space-y-5">
         <div className="space-y-1.5">
           <Label htmlFor="search">Search</Label>
           <Input
