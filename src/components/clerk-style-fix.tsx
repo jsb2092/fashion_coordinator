@@ -27,33 +27,30 @@ export function ClerkStyleFix() {
     }
 
     style.textContent = `
-      /* Base: navy background for clerk containers */
-      .cl-rootBox,
-      .cl-card,
-      .cl-cardBox,
-      .cl-signIn-root,
-      .cl-signUp-root,
-      .cl-footer,
-      .cl-footerAction,
-      .cl-main,
-      [class*="cl-footer"],
-      [class*="cl-internal"] {
+      /* Base: navy background for ALL clerk elements */
+      [class*="cl-"]:not(.cl-formButtonPrimary):not([class*="formButtonPrimary"]) {
         background-color: ${navyTheme.bg} !important;
         border-color: ${navyTheme.border} !important;
       }
 
-      /* Primary buttons - GOLD - high specificity */
-      .cl-formButtonPrimary,
+      /* All descendants too, except buttons */
+      [class*="cl-"] *:not(.cl-formButtonPrimary):not([class*="formButtonPrimary"]):not(button):not(svg):not(img):not(path) {
+        background-color: ${navyTheme.bg} !important;
+      }
+
+      /* Primary buttons - GOLD - highest specificity */
       button.cl-formButtonPrimary,
-      [class*="cl-formButtonPrimary"] {
+      .cl-formButtonPrimary,
+      [class*="cl-formButtonPrimary"],
+      [class*="cl-"] button[class*="Primary"],
+      .cl-card button.cl-formButtonPrimary {
         background-color: ${navyTheme.gold} !important;
         color: ${navyTheme.bgDark} !important;
         border-color: ${navyTheme.gold} !important;
       }
-      .cl-formButtonPrimary span,
-      .cl-formButtonPrimary div,
-      button.cl-formButtonPrimary span,
-      button.cl-formButtonPrimary div {
+      button.cl-formButtonPrimary *,
+      .cl-formButtonPrimary *,
+      [class*="cl-formButtonPrimary"] * {
         background-color: transparent !important;
         color: ${navyTheme.bgDark} !important;
       }
