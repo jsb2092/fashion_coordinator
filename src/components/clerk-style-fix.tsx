@@ -102,27 +102,49 @@ export function ClerkStyleFix() {
         el.style.setProperty("background-color", "transparent", "important");
       });
 
-      // Fix the gray boxes on sides of footer - target footer row and ALL its children/siblings
+      // Fix the gray boxes on sides of footer - walk up 5 levels and fix everything
       const footerAction = document.querySelector('.cl-footerAction');
       if (footerAction) {
-        const parent = footerAction.parentElement;
-        if (parent) {
-          // Fix parent and all siblings
-          parent.style.setProperty("background-color", navyTheme.bg, "important");
-          Array.from(parent.children).forEach((child) => {
-            const el = child as HTMLElement;
-            el.style.setProperty("background-color", navyTheme.bg, "important");
-          });
-          // Also check grandparent
-          const grandparent = parent.parentElement;
-          if (grandparent) {
-            grandparent.style.setProperty("background-color", navyTheme.bg, "important");
-            Array.from(grandparent.children).forEach((child) => {
-              const el = child as HTMLElement;
+        let current: HTMLElement | null = footerAction as HTMLElement;
+        // Walk up 5 levels
+        for (let i = 0; i < 5 && current; i++) {
+          current.style.setProperty("background-color", navyTheme.bg, "important");
+          // Fix all siblings at this level
+          if (current.parentElement) {
+            Array.from(current.parentElement.children).forEach((sibling) => {
+              const el = sibling as HTMLElement;
               el.style.setProperty("background-color", navyTheme.bg, "important");
+              // And all children of siblings
+              el.querySelectorAll('*').forEach((desc) => {
+                (desc as HTMLElement).style.setProperty("background-color", navyTheme.bg, "important");
+              });
             });
           }
+          current = current.parentElement;
         }
+      }
+
+      // Also target any element that looks gray by checking computed styles
+      const clerkRoot = document.querySelector('.cl-signIn-root, .cl-signUp-root, .cl-rootBox');
+      if (clerkRoot) {
+        clerkRoot.querySelectorAll('*').forEach((el) => {
+          const htmlEl = el as HTMLElement;
+          const computed = window.getComputedStyle(htmlEl);
+          const bg = computed.backgroundColor;
+          // Check for gray-ish colors (r, g, b are similar and in mid-range)
+          const match = bg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+          if (match) {
+            const r = parseInt(match[1]);
+            const g = parseInt(match[2]);
+            const b = parseInt(match[3]);
+            // If it's grayish (similar r,g,b values, not already navy)
+            const isGray = Math.abs(r - g) < 20 && Math.abs(g - b) < 20 && r > 30 && r < 80;
+            const isNotNavy = !(r < 30 && g < 30 && b < 50);
+            if (isGray || (r > 40 && g > 40 && b > 50 && b < 80)) {
+              htmlEl.style.setProperty("background-color", navyTheme.bg, "important");
+            }
+          }
+        });
       }
 
       const bgColor = navyTheme.bgLight;
