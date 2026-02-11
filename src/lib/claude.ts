@@ -144,7 +144,8 @@ interface ImageInput {
 }
 
 export async function analyzeClothingImage(
-  images: ImageInput | ImageInput[]
+  images: ImageInput | ImageInput[],
+  userDescription?: string
 ): Promise<ClothingAnalysis> {
   // Normalize to array
   const imageArray = Array.isArray(images) ? images : [images];
@@ -169,9 +170,13 @@ export async function analyzeClothingImage(
     ? "Multiple images are provided - these may include the clothing item from different angles and/or tags/labels showing brand and material information. Use ALL images to gather complete information.\n\n"
     : "";
 
+  const userDescriptionNote = userDescription
+    ? `The user has provided this description of the item: "${userDescription}"\n\nUse this information to help identify the item accurately. Trust the user's description for details that may not be visible in the image.\n\n`
+    : "";
+
   content.push({
     type: "text",
-    text: `${multiImageNote}Analyze this clothing item and provide structured data in JSON format.
+    text: `${multiImageNote}${userDescriptionNote}Analyze this clothing item and provide structured data in JSON format.
 
 Be specific about colors - use descriptive names like "navy blue", "charcoal grey", "burgundy", "light brown", "mint green" rather than generic "blue", "grey", etc.
 

@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     // Support both single imageUrl and array of imageUrls
     const imageUrls: string[] = body.imageUrls || (body.imageUrl ? [body.imageUrl] : []);
+    const description: string | undefined = body.description;
 
     if (imageUrls.length === 0) {
       return NextResponse.json(
@@ -109,7 +110,7 @@ export async function POST(request: NextRequest) {
       throw new Error("No valid images to analyze");
     }
 
-    const analysis = await analyzeClothingImage(images);
+    const analysis = await analyzeClothingImage(images, description);
 
     return NextResponse.json(analysis);
   } catch (error) {

@@ -46,6 +46,7 @@ export default function UploadPage() {
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [formData, setFormData] = useState<Partial<AnalysisResult>>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [description, setDescription] = useState("");
 
   const currentData = analysis ? { ...analysis, ...formData } : null;
 
@@ -78,7 +79,7 @@ export default function UploadPage() {
         const analyzeRes = await fetch("/api/upload/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ imageUrls: urls }),
+          body: JSON.stringify({ imageUrls: urls, description: description || undefined }),
         });
 
         if (!analyzeRes.ok) {
@@ -160,7 +161,20 @@ export default function UploadPage() {
           <CardHeader>
             <CardTitle>Upload Photos</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="description">Description (optional)</Label>
+              <Textarea
+                id="description"
+                placeholder="Help the AI by describing this item, e.g. 'Navy blue quarter-zip sweater from J.Crew, 100% merino wool'"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={2}
+              />
+              <p className="text-xs text-muted-foreground">
+                Add details the AI might not see: brand, material, or specific style notes
+              </p>
+            </div>
             <PhotoUploader onUpload={handleUpload} isUploading={isUploading} />
             {isUploading && (
               <p className="text-center text-muted-foreground mt-4">
@@ -336,6 +350,7 @@ export default function UploadPage() {
                     setAnalysis(null);
                     setUploadedUrls([]);
                     setFormData({});
+                    setDescription("");
                   }}
                 >
                   Upload Different Photo
