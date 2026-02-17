@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink } from "lucide-react";
@@ -25,64 +26,36 @@ function buildAmazonSearchUrl(query: string, tag: string): string {
   return `https://www.amazon.com/s?${params.toString()}`;
 }
 
-// Map common color names to CSS colors for the gradient
-function colorToCSS(color: string): string {
-  const c = color.toLowerCase();
-  const map: Record<string, string> = {
-    navy: "#1e3a5f",
-    "navy blue": "#1e3a5f",
-    black: "#1a1a1a",
-    white: "#e8e8e8",
-    "off-white": "#f0ece2",
-    cream: "#f5f0e1",
-    grey: "#6b6b6b",
-    gray: "#6b6b6b",
-    charcoal: "#36454f",
-    "charcoal grey": "#36454f",
-    burgundy: "#722f37",
-    olive: "#556b2f",
-    "olive green": "#556b2f",
-    khaki: "#c3b091",
-    tan: "#d2b48c",
-    camel: "#c19a6b",
-    brown: "#5c4033",
-    "dark brown": "#3e2723",
-    "light brown": "#a0785a",
-    blue: "#2563eb",
-    "light blue": "#93c5fd",
-    red: "#b91c1c",
-    green: "#166534",
-    pink: "#ec4899",
-    lavender: "#9f8fdb",
-    beige: "#d4c5a9",
-    coral: "#f08080",
-    teal: "#0d9488",
-    rust: "#a0522d",
-    plum: "#673147",
-    sage: "#9caf88",
-    "sage green": "#9caf88",
-    stone: "#a09683",
-    slate: "#5a6478",
-    indigo: "#3f51b5",
-    cobalt: "#0047ab",
-    maroon: "#5c1a1a",
-    cognac: "#9a6233",
-  };
-
-  // Check exact match first, then partial matches
-  if (map[c]) return map[c];
-  for (const [key, value] of Object.entries(map)) {
-    if (c.includes(key)) return value;
-  }
-  return "#6366f1"; // Default indigo
-}
+const CATEGORY_IMAGES: Record<string, string> = {
+  "Suits": "/images/categories/suits.jpg",
+  "Structured Blazers/Jackets": "/images/categories/blazers.jpg",
+  "Casual Jackets": "/images/categories/blazers.jpg",
+  "Dress Shirts": "/images/categories/dress-shirts.jpg",
+  "Casual Long-Sleeve Shirts": "/images/categories/dress-shirts.jpg",
+  "Short-Sleeve Button-Ups": "/images/categories/polos.jpg",
+  "Polos": "/images/categories/polos.jpg",
+  "T-Shirts": "/images/categories/tshirts.jpg",
+  "Sweaters/Knits": "/images/categories/sweaters.jpg",
+  "Dress Pants": "/images/categories/dress-pants.jpg",
+  "Chinos": "/images/categories/chinos.jpg",
+  "Jeans": "/images/categories/jeans.jpg",
+  "Shorts": "/images/categories/shorts.jpg",
+  "Dress Shoes": "/images/categories/dress-shoes.jpg",
+  "Casual Shoes": "/images/categories/casual-shoes.jpg",
+  "Boots": "/images/categories/boots.jpg",
+  "Athletic Shoes": "/images/categories/athletic-shoes.jpg",
+  "Formal Shoes": "/images/categories/dress-shoes.jpg",
+  "Outerwear": "/images/categories/outerwear.jpg",
+  "Accessories": "/images/categories/accessories.jpg",
+};
 
 export function ShoppingRecommendationCard({
   recommendation,
 }: ShoppingRecommendationCardProps) {
+  const [imgError, setImgError] = useState(false);
   const tag = process.env.NEXT_PUBLIC_AMAZON_AFFILIATE_TAG || "outfitiq-20";
   const url = buildAmazonSearchUrl(recommendation.searchQuery, tag);
-  const bgColor = colorToCSS(recommendation.suggestedColor);
+  const imageSrc = CATEGORY_IMAGES[recommendation.category];
 
   return (
     <Card
@@ -92,29 +65,38 @@ export function ShoppingRecommendationCard({
         fetch("/api/shopping-recommendations/click", { method: "POST" }).catch(() => {});
       }}
     >
-      <div
-        className="aspect-square relative flex flex-col items-center justify-center p-4 text-center"
-        style={{
-          background: `linear-gradient(135deg, ${bgColor}dd, ${bgColor}99)`,
-        }}
-      >
-        <p className="font-semibold text-white text-sm leading-tight drop-shadow-md">
-          {recommendation.title}
-        </p>
-        <p className="text-white/80 text-xs mt-1.5 line-clamp-2 drop-shadow-sm">
-          {recommendation.description}
-        </p>
+      <div className="aspect-square relative bg-muted">
+        {imageSrc && !imgError ? (
+          <img
+            src={imageSrc}
+            alt={recommendation.title}
+            className="h-full w-full object-cover"
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
+            <p className="text-muted-foreground/60 text-sm font-medium">
+              {recommendation.category}
+            </p>
+          </div>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
         <Badge
-          className="absolute top-2 left-2 text-[10px] px-1.5 py-0 bg-white/20 text-white border-white/30 backdrop-blur-sm"
+          className="absolute top-2 left-2 text-[10px] px-1.5 py-0 bg-white/90 text-foreground border-0"
         >
           Suggested
         </Badge>
-        <ExternalLink className="absolute bottom-2 right-2 h-3.5 w-3.5 text-white/40 opacity-0 group-hover:opacity-100 transition-opacity" />
+        <ExternalLink className="absolute top-2 right-2 h-3.5 w-3.5 text-white/70 opacity-0 group-hover:opacity-100 transition-opacity" />
+        <div className="absolute bottom-2 left-2 right-2">
+          <p className="text-white text-xs line-clamp-2 drop-shadow-md">
+            {recommendation.description}
+          </p>
+        </div>
       </div>
       <div className="p-3">
-        <p className="font-medium text-sm truncate">{recommendation.category}</p>
+        <p className="font-medium text-sm truncate">{recommendation.title}</p>
         <p className="text-xs text-muted-foreground truncate">
-          {recommendation.suggestedColor}
+          {recommendation.suggestedColor} · {recommendation.category}
         </p>
       </div>
     </Card>
