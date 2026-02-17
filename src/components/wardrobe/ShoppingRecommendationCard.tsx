@@ -3,7 +3,15 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ShoppingBag, ExternalLink } from "lucide-react";
-import type { ShoppingRecommendation } from "@/lib/claude";
+
+interface ShoppingRecommendation {
+  searchQuery: string;
+  category: string;
+  suggestedColor: string;
+  title: string;
+  description: string;
+  priority: "high" | "medium" | "low";
+}
 
 interface ShoppingRecommendationCardProps {
   recommendation: ShoppingRecommendation;

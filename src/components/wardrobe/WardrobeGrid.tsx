@@ -21,7 +21,15 @@ import {
 import { ITEM_STATUSES, FORMALITY_LEVELS } from "@/constants/categories";
 import { updateWardrobeItem } from "@/lib/actions";
 import { toast } from "sonner";
-import type { ShoppingRecommendation } from "@/lib/claude";
+
+interface ShoppingRecommendation {
+  searchQuery: string;
+  category: string;
+  suggestedColor: string;
+  title: string;
+  description: string;
+  priority: "high" | "medium" | "low";
+}
 
 interface WardrobeGridProps {
   items: WardrobeItem[];
