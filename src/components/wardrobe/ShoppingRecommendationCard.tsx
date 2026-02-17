@@ -28,9 +28,7 @@ function buildAmazonSearchUrl(query: string, tag: string): string {
 export function ShoppingRecommendationCard({
   recommendation,
 }: ShoppingRecommendationCardProps) {
-  const tag = process.env.NEXT_PUBLIC_AMAZON_AFFILIATE_TAG;
-  if (!tag) return null;
-
+  const tag = process.env.NEXT_PUBLIC_AMAZON_AFFILIATE_TAG || "outfitiq-20";
   const url = buildAmazonSearchUrl(recommendation.searchQuery, tag);
 
   return (
