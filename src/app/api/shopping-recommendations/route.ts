@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { generateShoppingRecommendations } from "@/lib/claude";
 
-const ONE_HOUR_MS = 60 * 60 * 1000;
+const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const MIN_ITEMS = 2;
 
 export async function POST() {
@@ -32,16 +32,32 @@ export async function POST() {
     });
 
     if (cached) {
-      // Cache valid: wardrobe hasn't changed since cache was built
-      if (cached.wardrobeModifiedAt >= person.wardrobeLastModified) {
+      const cacheAge = Date.now() - cached.updatedAt.getTime();
+      const recCount = Array.isArray(cached.recommendations)
+        ? (cached.recommendations as unknown[]).length
+        : 0;
+      const allClicked = recCount > 0 && cached.clickCount >= recCount;
+
+      // Wardrobe unchanged + not all clicked through → return cache
+      if (
+        cached.wardrobeModifiedAt >= person.wardrobeLastModified &&
+        !allClicked
+      ) {
         return NextResponse.json({
           recommendations: cached.recommendations,
         });
       }
 
-      // Throttle: don't regenerate if cache was updated less than 1 hour ago
-      const cacheAge = Date.now() - cached.updatedAt.getTime();
-      if (cacheAge < ONE_HOUR_MS) {
+      // Throttle: don't regenerate within 1 week unless all clicked
+      if (cacheAge < ONE_WEEK_MS && !allClicked) {
+        return NextResponse.json({
+          recommendations: cached.recommendations,
+        });
+      }
+
+      // If all clicked but less than 1 day old, still throttle
+      // (prevent rapid regeneration from click-spamming)
+      if (allClicked && cacheAge < 24 * 60 * 60 * 1000) {
         return NextResponse.json({
           recommendations: cached.recommendations,
         });
@@ -85,19 +101,21 @@ export async function POST() {
 
     const recommendations = await generateShoppingRecommendations(wardrobeItems);
 
-    // Upsert cache
+    // Upsert cache (reset clickCount for fresh recommendations)
     await prisma.shoppingRecommendationCache.upsert({
       where: { personId: person.id },
       update: {
         recommendations: recommendations as object[],
         wardrobeModifiedAt: person.wardrobeLastModified,
         itemCount,
+        clickCount: 0,
       },
       create: {
         personId: person.id,
         recommendations: recommendations as object[],
         wardrobeModifiedAt: person.wardrobeLastModified,
         itemCount,
+        clickCount: 0,
       },
     });
 

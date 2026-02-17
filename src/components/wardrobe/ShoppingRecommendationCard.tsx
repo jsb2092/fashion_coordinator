@@ -34,7 +34,10 @@ export function ShoppingRecommendationCard({
   return (
     <Card
       className="group cursor-pointer overflow-hidden transition-all hover:ring-2 hover:ring-primary"
-      onClick={() => window.open(url, "_blank", "noopener,noreferrer")}
+      onClick={() => {
+        window.open(url, "_blank", "noopener,noreferrer");
+        fetch("/api/shopping-recommendations/click", { method: "POST" }).catch(() => {});
+      }}
     >
       <div className="aspect-square relative bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
         <ShoppingBag className="h-12 w-12 text-muted-foreground/40" />

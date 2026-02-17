@@ -379,6 +379,7 @@ model ShoppingRecommendationCache {
   recommendations    Json     // Array of recommendation objects
   wardrobeModifiedAt DateTime // Snapshot of wardrobeLastModified at cache time
   itemCount          Int      // Wardrobe size at cache time
+  clickCount         Int      @default(0) // How many recommendations user has clicked
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
