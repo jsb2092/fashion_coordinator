@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { getWardrobeItems } from "@/lib/actions";
+import { getWardrobeItems, getOrCreatePerson } from "@/lib/actions";
 import { WardrobeGrid } from "@/components/wardrobe/WardrobeGrid";
 import { ItemFilters } from "@/components/wardrobe/ItemFilters";
 import { MobileFilters } from "@/components/wardrobe/MobileFilters";
@@ -23,15 +23,19 @@ async function WardrobeContent({
   searchParams: PageProps["searchParams"];
 }) {
   const params = await searchParams;
-  const items = await getWardrobeItems({
-    category: params.category,
-    status: params.status, // undefined = all statuses
-    formalityLevel: params.formality ? parseInt(params.formality) : undefined,
-    season: params.season,
-    search: params.search,
-  });
+  const [items, person] = await Promise.all([
+    getWardrobeItems({
+      category: params.category,
+      status: params.status, // undefined = all statuses
+      formalityLevel: params.formality ? parseInt(params.formality) : undefined,
+      season: params.season,
+      search: params.search,
+    }),
+    getOrCreatePerson(),
+  ]);
+  const isPro = person.subscriptionTier === "pro" && person.subscriptionStatus === "active";
 
-  return <WardrobeGrid items={items} />;
+  return <WardrobeGrid items={items} isPro={isPro} />;
 }
 
 function WardrobeSkeleton() {

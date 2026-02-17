@@ -19,13 +19,15 @@ import {
 } from "@/components/ui/select";
 import { ITEM_STATUSES, FORMALITY_LEVELS } from "@/constants/categories";
 import { updateWardrobeItem } from "@/lib/actions";
+import { ShopSimilar } from "@/components/ads/ShopSimilar";
 import { toast } from "sonner";
 
 interface WardrobeGridProps {
   items: WardrobeItem[];
+  isPro?: boolean;
 }
 
-export function WardrobeGrid({ items }: WardrobeGridProps) {
+export function WardrobeGrid({ items, isPro }: WardrobeGridProps) {
   const [selectedItem, setSelectedItem] = useState<WardrobeItem | null>(null);
   const [editItem, setEditItem] = useState<WardrobeItem | null>(null);
   const [isChangingStatus, setIsChangingStatus] = useState(false);
@@ -204,6 +206,9 @@ export function WardrobeGrid({ items }: WardrobeGridProps) {
                       <p>Last worn: {new Date(selectedItem.lastWorn).toLocaleDateString()}</p>
                     )}
                   </div>
+
+                  {/* Shop Similar */}
+                  {!isPro && <ShopSimilar item={selectedItem} />}
                 </div>
 
                 {/* Actions */}
