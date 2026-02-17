@@ -82,7 +82,7 @@ export function ShoppingRecommendationCard({
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
         <Badge
-          className="absolute top-2 left-2 text-[10px] px-1.5 py-0 bg-white/90 text-foreground border-0"
+          className="absolute top-2 left-2 text-[10px] px-1.5 py-0 bg-black/50 text-white border-0 backdrop-blur-sm"
         >
           Suggested
         </Badge>
