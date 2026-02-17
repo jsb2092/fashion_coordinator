@@ -4,13 +4,11 @@ import prisma from "@/lib/prisma";
 import { generateShoppingRecommendations } from "@/lib/claude";
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
-const MIN_ITEMS = 3;
+const MIN_ITEMS = 2;
 
 export async function POST() {
-  console.log("[ShoppingRecs] POST called");
   const { userId } = await auth();
   if (!userId) {
-    console.log("[ShoppingRecs] No userId, returning 401");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -20,13 +18,11 @@ export async function POST() {
     });
 
     if (!person) {
-      console.log("[ShoppingRecs] Person not found");
       return NextResponse.json({ error: "Person not found" }, { status: 404 });
     }
 
     // Pro users don't see recommendations
     if (person.subscriptionTier === "pro") {
-      console.log("[ShoppingRecs] Pro user, skipping");
       return NextResponse.json({ recommendations: [] });
     }
 
@@ -38,7 +34,6 @@ export async function POST() {
     if (cached) {
       // Cache valid: wardrobe hasn't changed since cache was built
       if (cached.wardrobeModifiedAt >= person.wardrobeLastModified) {
-        console.log("[ShoppingRecs] Returning valid cache");
         return NextResponse.json({
           recommendations: cached.recommendations,
         });
@@ -47,7 +42,6 @@ export async function POST() {
       // Throttle: don't regenerate if cache was updated less than 1 hour ago
       const cacheAge = Date.now() - cached.updatedAt.getTime();
       if (cacheAge < ONE_HOUR_MS) {
-        console.log("[ShoppingRecs] Throttled, returning stale cache");
         return NextResponse.json({
           recommendations: cached.recommendations,
         });
@@ -63,11 +57,8 @@ export async function POST() {
     });
 
     if (itemCount < MIN_ITEMS) {
-      console.log("[ShoppingRecs] Only", itemCount, "items, need", MIN_ITEMS);
       return NextResponse.json({ recommendations: [] });
     }
-
-    console.log("[ShoppingRecs] Generating for", itemCount, "items");
 
     // Fetch wardrobe items for Claude
     const wardrobeItems = await prisma.wardrobeItem.findMany({
@@ -93,7 +84,6 @@ export async function POST() {
     });
 
     const recommendations = await generateShoppingRecommendations(wardrobeItems);
-    console.log("[ShoppingRecs] Generated", recommendations.length, "recommendations");
 
     // Upsert cache
     await prisma.shoppingRecommendationCache.upsert({
@@ -113,7 +103,7 @@ export async function POST() {
 
     return NextResponse.json({ recommendations });
   } catch (error) {
-    console.error("[ShoppingRecs] Error:", error);
+    console.error("Shopping recommendations error:", error);
     return NextResponse.json(
       { error: "Failed to generate recommendations" },
       { status: 500 }
