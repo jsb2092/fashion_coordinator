@@ -102,23 +102,50 @@ export function WardrobeGrid({ items, isPro }: WardrobeGridProps) {
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
         {(() => {
           const cells: React.ReactNode[] = [];
-          const interval = Math.max(3, Math.floor(items.length / recommendations.length) || 5);
-          let recIdx = 0;
 
-          items.forEach((item, index) => {
-            cells.push(
-              <WardrobeItemCard
-                key={item.id}
-                item={item}
-                onClick={() => setSelectedItem(item)}
-              />
-            );
+          if (recommendations.length === 0) {
+            // No recommendations — just render items
+            items.forEach((item) => {
+              cells.push(
+                <WardrobeItemCard
+                  key={item.id}
+                  item={item}
+                  onClick={() => setSelectedItem(item)}
+                />
+              );
+            });
+          } else {
+            // Interleave: place a rec after every N items
+            // e.g. 10 items, 5 recs → every 2; 3 items, 5 recs → every 1
+            const interval = Math.max(1, Math.ceil(items.length / recommendations.length));
+            let recIdx = 0;
 
-            if (
-              recommendations.length > 0 &&
-              recIdx < recommendations.length &&
-              (index + 1) % interval === 0
-            ) {
+            items.forEach((item, index) => {
+              cells.push(
+                <WardrobeItemCard
+                  key={item.id}
+                  item={item}
+                  onClick={() => setSelectedItem(item)}
+                />
+              );
+
+              if (recIdx < recommendations.length && (index + 1) % interval === 0) {
+                cells.push(
+                  <div
+                    key={`rec-${recIdx}`}
+                    className="animate-in fade-in duration-500"
+                  >
+                    <ShoppingRecommendationCard
+                      recommendation={recommendations[recIdx]}
+                    />
+                  </div>
+                );
+                recIdx++;
+              }
+            });
+
+            // Append any remaining recommendations after all items
+            while (recIdx < recommendations.length) {
               cells.push(
                 <div
                   key={`rec-${recIdx}`}
@@ -131,21 +158,6 @@ export function WardrobeGrid({ items, isPro }: WardrobeGridProps) {
               );
               recIdx++;
             }
-          });
-
-          // Append any remaining recommendations after all items
-          while (recIdx < recommendations.length) {
-            cells.push(
-              <div
-                key={`rec-${recIdx}`}
-                className="animate-in fade-in duration-500"
-              >
-                <ShoppingRecommendationCard
-                  recommendation={recommendations[recIdx]}
-                />
-              </div>
-            );
-            recIdx++;
           }
 
           return cells;
