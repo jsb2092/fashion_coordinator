@@ -100,34 +100,56 @@ export function WardrobeGrid({ items, isPro }: WardrobeGridProps) {
   return (
     <>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-        {items.map((item, index) => {
-          const elements = [
-            <WardrobeItemCard
-              key={item.id}
-              item={item}
-              onClick={() => setSelectedItem(item)}
-            />,
-          ];
+        {(() => {
+          const cells: React.ReactNode[] = [];
+          const interval = Math.max(3, Math.floor(items.length / recommendations.length) || 5);
+          let recIdx = 0;
 
-          // Interleave a recommendation card every 5th position
-          if (recommendations.length > 0 && (index + 1) % 5 === 0) {
-            const recIndex = Math.floor(index / 5);
-            if (recIndex < recommendations.length) {
-              elements.push(
+          items.forEach((item, index) => {
+            cells.push(
+              <WardrobeItemCard
+                key={item.id}
+                item={item}
+                onClick={() => setSelectedItem(item)}
+              />
+            );
+
+            if (
+              recommendations.length > 0 &&
+              recIdx < recommendations.length &&
+              (index + 1) % interval === 0
+            ) {
+              cells.push(
                 <div
-                  key={`rec-${recIndex}`}
+                  key={`rec-${recIdx}`}
                   className="animate-in fade-in duration-500"
                 >
                   <ShoppingRecommendationCard
-                    recommendation={recommendations[recIndex]}
+                    recommendation={recommendations[recIdx]}
                   />
                 </div>
               );
+              recIdx++;
             }
+          });
+
+          // Append any remaining recommendations after all items
+          while (recIdx < recommendations.length) {
+            cells.push(
+              <div
+                key={`rec-${recIdx}`}
+                className="animate-in fade-in duration-500"
+              >
+                <ShoppingRecommendationCard
+                  recommendation={recommendations[recIdx]}
+                />
+              </div>
+            );
+            recIdx++;
           }
 
-          return elements;
-        })}
+          return cells;
+        })()}
       </div>
 
       {/* Combined Photo + Details Modal */}
