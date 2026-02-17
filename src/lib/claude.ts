@@ -985,6 +985,65 @@ Use their ACTUAL supply names in the instructions. If they're missing something 
   return JSON.parse(jsonMatch[0]) as CareInstructions;
 }
 
+// Shopping Recommendations
+export interface ShoppingRecommendation {
+  searchQuery: string;       // Amazon search string
+  category: string;          // CATEGORIES value
+  suggestedColor: string;
+  title: string;             // Short: "Navy Chinos"
+  description: string;       // Why it complements the wardrobe
+  priority: "high" | "medium" | "low";
+}
+
+export async function generateShoppingRecommendations(
+  wardrobeItems: WardrobeItemSummary[]
+): Promise<ShoppingRecommendation[]> {
+  const response = await anthropic.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 2048,
+    messages: [
+      {
+        role: "user",
+        content: `Analyze this wardrobe and suggest 3-5 complementary items to purchase. Focus on filling gaps that would make the wardrobe more versatile.
+
+WARDROBE:
+${JSON.stringify(wardrobeItems, null, 2)}
+
+CATEGORIES: ${CATEGORIES.join(", ")}
+
+Consider:
+1. Category gaps — are any essential categories missing or underrepresented?
+2. Color gaps — would adding certain colors create more outfit combinations?
+3. Formality gaps — is there a formality level with few options?
+4. Versatility — what single additions would pair with the most existing items?
+
+Return a JSON object with a "recommendations" array. Each recommendation:
+{
+  "searchQuery": "specific Amazon search terms (e.g., 'men navy slim chinos')",
+  "category": "from CATEGORIES list",
+  "suggestedColor": "specific color name",
+  "title": "Short name (e.g., 'Navy Chinos')",
+  "description": "1 sentence on why this complements their wardrobe",
+  "priority": "high" | "medium" | "low"
+}
+
+Prioritize foundational, versatile pieces over niche items. Return only valid JSON.`,
+      },
+    ],
+  });
+
+  const text =
+    response.content[0].type === "text" ? response.content[0].text : "";
+
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    throw new Error("Failed to parse shopping recommendations");
+  }
+
+  const result = JSON.parse(jsonMatch[0]) as { recommendations: ShoppingRecommendation[] };
+  return result.recommendations;
+}
+
 export async function* streamChat(
   messages: Array<{ role: "user" | "assistant"; content: string }>,
   wardrobeContext: string

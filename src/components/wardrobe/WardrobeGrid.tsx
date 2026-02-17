@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { WardrobeItem } from "@prisma/client";
 import { WardrobeItemCard } from "./WardrobeItemCard";
+import { ShoppingRecommendationCard } from "./ShoppingRecommendationCard";
 import { ItemDetailModal } from "./ItemDetailModal";
 import {
   Dialog,
@@ -19,8 +20,8 @@ import {
 } from "@/components/ui/select";
 import { ITEM_STATUSES, FORMALITY_LEVELS } from "@/constants/categories";
 import { updateWardrobeItem } from "@/lib/actions";
-import { ShopSimilar } from "@/components/ads/ShopSimilar";
 import { toast } from "sonner";
+import type { ShoppingRecommendation } from "@/lib/claude";
 
 interface WardrobeGridProps {
   items: WardrobeItem[];
@@ -31,6 +32,22 @@ export function WardrobeGrid({ items, isPro }: WardrobeGridProps) {
   const [selectedItem, setSelectedItem] = useState<WardrobeItem | null>(null);
   const [editItem, setEditItem] = useState<WardrobeItem | null>(null);
   const [isChangingStatus, setIsChangingStatus] = useState(false);
+  const [recommendations, setRecommendations] = useState<ShoppingRecommendation[]>([]);
+
+  useEffect(() => {
+    if (isPro || items.length < 3) return;
+
+    fetch("/api/shopping-recommendations", { method: "POST" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.recommendations?.length) {
+          setRecommendations(data.recommendations);
+        }
+      })
+      .catch(() => {
+        // Silent failure — grid shows items as normal
+      });
+  }, [isPro, items.length]);
 
   const handleQuickStatusChange = async (newStatus: string) => {
     if (!selectedItem) return;
@@ -75,13 +92,34 @@ export function WardrobeGrid({ items, isPro }: WardrobeGridProps) {
   return (
     <>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-        {items.map((item) => (
-          <WardrobeItemCard
-            key={item.id}
-            item={item}
-            onClick={() => setSelectedItem(item)}
-          />
-        ))}
+        {items.map((item, index) => {
+          const elements = [
+            <WardrobeItemCard
+              key={item.id}
+              item={item}
+              onClick={() => setSelectedItem(item)}
+            />,
+          ];
+
+          // Interleave a recommendation card every 5th position
+          if (recommendations.length > 0 && (index + 1) % 5 === 0) {
+            const recIndex = Math.floor(index / 5);
+            if (recIndex < recommendations.length) {
+              elements.push(
+                <div
+                  key={`rec-${recIndex}`}
+                  className="animate-in fade-in duration-500"
+                >
+                  <ShoppingRecommendationCard
+                    recommendation={recommendations[recIndex]}
+                  />
+                </div>
+              );
+            }
+          }
+
+          return elements;
+        })}
       </div>
 
       {/* Combined Photo + Details Modal */}
@@ -207,8 +245,6 @@ export function WardrobeGrid({ items, isPro }: WardrobeGridProps) {
                     )}
                   </div>
 
-                  {/* Shop Similar */}
-                  {!isPro && <ShopSimilar item={selectedItem} />}
                 </div>
 
                 {/* Actions */}

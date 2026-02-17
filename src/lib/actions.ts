@@ -114,24 +114,30 @@ export async function createWardrobeItem(data: {
 }) {
   const person = await getOrCreatePerson();
 
-  const item = await prisma.wardrobeItem.create({
-    data: {
-      photoUrls: data.photoUrls,
-      category: data.category,
-      subcategory: data.subcategory,
-      colorPrimary: data.colorPrimary,
-      colorSecondary: data.colorSecondary,
-      pattern: data.pattern,
-      brand: data.brand,
-      material: data.material,
-      formalityLevel: data.formalityLevel,
-      construction: data.construction,
-      notes: data.notes,
-      personId: person.id,
-      seasonSuitability: data.seasonSuitability as never[],
-      aiAnalysis: data.aiAnalysis as never,
-    },
-  });
+  const [item] = await prisma.$transaction([
+    prisma.wardrobeItem.create({
+      data: {
+        photoUrls: data.photoUrls,
+        category: data.category,
+        subcategory: data.subcategory,
+        colorPrimary: data.colorPrimary,
+        colorSecondary: data.colorSecondary,
+        pattern: data.pattern,
+        brand: data.brand,
+        material: data.material,
+        formalityLevel: data.formalityLevel,
+        construction: data.construction,
+        notes: data.notes,
+        personId: person.id,
+        seasonSuitability: data.seasonSuitability as never[],
+        aiAnalysis: data.aiAnalysis as never,
+      },
+    }),
+    prisma.person.update({
+      where: { id: person.id },
+      data: { wardrobeLastModified: new Date() },
+    }),
+  ]);
 
   revalidatePath("/");
   return item;
@@ -158,13 +164,19 @@ export async function updateWardrobeItem(
 ) {
   const person = await getOrCreatePerson();
 
-  const item = await prisma.wardrobeItem.updateMany({
-    where: {
-      id,
-      personId: person.id,
-    },
-    data: data as never,
-  });
+  const [item] = await prisma.$transaction([
+    prisma.wardrobeItem.updateMany({
+      where: {
+        id,
+        personId: person.id,
+      },
+      data: data as never,
+    }),
+    prisma.person.update({
+      where: { id: person.id },
+      data: { wardrobeLastModified: new Date() },
+    }),
+  ]);
 
   revalidatePath("/");
   return item;
@@ -173,12 +185,18 @@ export async function updateWardrobeItem(
 export async function deleteWardrobeItem(id: string) {
   const person = await getOrCreatePerson();
 
-  await prisma.wardrobeItem.deleteMany({
-    where: {
-      id,
-      personId: person.id,
-    },
-  });
+  await prisma.$transaction([
+    prisma.wardrobeItem.deleteMany({
+      where: {
+        id,
+        personId: person.id,
+      },
+    }),
+    prisma.person.update({
+      where: { id: person.id },
+      data: { wardrobeLastModified: new Date() },
+    }),
+  ]);
 
   revalidatePath("/");
 }

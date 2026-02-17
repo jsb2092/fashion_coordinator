@@ -58,13 +58,19 @@ export async function PUT(
   try {
     const data = await request.json();
 
-    const item = await prisma.wardrobeItem.updateMany({
-      where: {
-        id: itemId,
-        personId,
-      },
-      data,
-    });
+    const [item] = await prisma.$transaction([
+      prisma.wardrobeItem.updateMany({
+        where: {
+          id: itemId,
+          personId,
+        },
+        data,
+      }),
+      prisma.person.update({
+        where: { id: personId },
+        data: { wardrobeLastModified: new Date() },
+      }),
+    ]);
 
     if (item.count === 0) {
       return NextResponse.json({ error: "Item not found" }, { status: 404 });
@@ -101,12 +107,18 @@ export async function DELETE(
   const { itemId } = await params;
 
   try {
-    const item = await prisma.wardrobeItem.deleteMany({
-      where: {
-        id: itemId,
-        personId,
-      },
-    });
+    const [item] = await prisma.$transaction([
+      prisma.wardrobeItem.deleteMany({
+        where: {
+          id: itemId,
+          personId,
+        },
+      }),
+      prisma.person.update({
+        where: { id: personId },
+        data: { wardrobeLastModified: new Date() },
+      }),
+    ]);
 
     if (item.count === 0) {
       return NextResponse.json({ error: "Item not found" }, { status: 404 });

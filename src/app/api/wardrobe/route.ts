@@ -76,24 +76,30 @@ export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
 
-    const item = await prisma.wardrobeItem.create({
-      data: {
-        personId: person.id,
-        photoUrls: data.photoUrls,
-        category: data.category,
-        subcategory: data.subcategory,
-        colorPrimary: data.colorPrimary,
-        colorSecondary: data.colorSecondary,
-        pattern: data.pattern,
-        brand: data.brand,
-        material: data.material,
-        formalityLevel: data.formalityLevel,
-        construction: data.construction,
-        seasonSuitability: data.seasonSuitability,
-        notes: data.notes,
-        aiAnalysis: data.aiAnalysis,
-      },
-    });
+    const [item] = await prisma.$transaction([
+      prisma.wardrobeItem.create({
+        data: {
+          personId: person.id,
+          photoUrls: data.photoUrls,
+          category: data.category,
+          subcategory: data.subcategory,
+          colorPrimary: data.colorPrimary,
+          colorSecondary: data.colorSecondary,
+          pattern: data.pattern,
+          brand: data.brand,
+          material: data.material,
+          formalityLevel: data.formalityLevel,
+          construction: data.construction,
+          seasonSuitability: data.seasonSuitability,
+          notes: data.notes,
+          aiAnalysis: data.aiAnalysis,
+        },
+      }),
+      prisma.person.update({
+        where: { id: person.id },
+        data: { wardrobeLastModified: new Date() },
+      }),
+    ]);
 
     return NextResponse.json(item);
   } catch (error) {
