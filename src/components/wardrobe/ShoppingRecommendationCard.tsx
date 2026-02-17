@@ -16,6 +16,7 @@ interface ShoppingRecommendation {
 
 interface ShoppingRecommendationCardProps {
   recommendation: ShoppingRecommendation;
+  isPro?: boolean;
 }
 
 function buildAmazonSearchUrl(query: string, tag: string): string {
@@ -51,6 +52,7 @@ const CATEGORY_IMAGES: Record<string, string> = {
 
 export function ShoppingRecommendationCard({
   recommendation,
+  isPro,
 }: ShoppingRecommendationCardProps) {
   const [imgError, setImgError] = useState(false);
   const tag = process.env.NEXT_PUBLIC_AMAZON_AFFILIATE_TAG || "outfitiq-20";
@@ -84,7 +86,7 @@ export function ShoppingRecommendationCard({
         <Badge
           className="absolute top-2 left-2 text-[10px] px-1.5 py-0 bg-black/50 text-white border-0 backdrop-blur-sm"
         >
-          Suggested
+          {isPro ? "AI Pick" : "Suggested"}
         </Badge>
         <ExternalLink className="absolute top-2 right-2 h-3.5 w-3.5 text-white/70 opacity-0 group-hover:opacity-100 transition-opacity" />
         <div className="absolute bottom-2 left-2 right-2">

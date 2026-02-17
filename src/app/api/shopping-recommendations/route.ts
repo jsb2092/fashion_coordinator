@@ -21,10 +21,8 @@ export async function POST() {
       return NextResponse.json({ error: "Person not found" }, { status: 404 });
     }
 
-    // Pro users don't see recommendations
-    if (person.subscriptionTier === "pro") {
-      return NextResponse.json({ recommendations: [] });
-    }
+    const isPro = person.subscriptionTier === "pro" && person.subscriptionStatus === "active";
+    const maxRecs = isPro ? 2 : 5;
 
     // Check cache
     const cached = await prisma.shoppingRecommendationCache.findUnique({
@@ -45,6 +43,7 @@ export async function POST() {
       ) {
         return NextResponse.json({
           recommendations: cached.recommendations,
+          isPro,
         });
       }
 
@@ -52,6 +51,7 @@ export async function POST() {
       if (cacheAge < ONE_WEEK_MS && !allClicked) {
         return NextResponse.json({
           recommendations: cached.recommendations,
+          isPro,
         });
       }
 
@@ -60,6 +60,7 @@ export async function POST() {
       if (allClicked && cacheAge < 24 * 60 * 60 * 1000) {
         return NextResponse.json({
           recommendations: cached.recommendations,
+          isPro,
         });
       }
     }
@@ -99,7 +100,8 @@ export async function POST() {
       },
     });
 
-    const recommendations = await generateShoppingRecommendations(wardrobeItems);
+    const allRecommendations = await generateShoppingRecommendations(wardrobeItems);
+    const recommendations = allRecommendations.slice(0, maxRecs);
 
     // Upsert cache (reset clickCount for fresh recommendations)
     await prisma.shoppingRecommendationCache.upsert({
@@ -119,7 +121,7 @@ export async function POST() {
       },
     });
 
-    return NextResponse.json({ recommendations });
+    return NextResponse.json({ recommendations, isPro });
   } catch (error) {
     console.error("Shopping recommendations error:", error);
     return NextResponse.json(

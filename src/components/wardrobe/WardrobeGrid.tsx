@@ -43,7 +43,7 @@ export function WardrobeGrid({ items, isPro }: WardrobeGridProps) {
   const [recommendations, setRecommendations] = useState<ShoppingRecommendation[]>([]);
 
   useEffect(() => {
-    if (isPro || items.length < 2) return;
+    if (items.length < 2) return;
 
     fetch("/api/shopping-recommendations", { method: "POST" })
       .then((res) => res.json())
@@ -55,7 +55,7 @@ export function WardrobeGrid({ items, isPro }: WardrobeGridProps) {
       .catch(() => {
         // Silent failure — grid shows items as normal
       });
-  }, [isPro, items.length]);
+  }, [items.length]);
 
   const handleQuickStatusChange = async (newStatus: string) => {
     if (!selectedItem) return;
@@ -153,6 +153,7 @@ export function WardrobeGrid({ items, isPro }: WardrobeGridProps) {
                 >
                   <ShoppingRecommendationCard
                     recommendation={recommendations[recIdx]}
+                    isPro={isPro}
                   />
                 </div>
               );
