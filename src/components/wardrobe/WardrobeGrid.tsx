@@ -43,17 +43,20 @@ export function WardrobeGrid({ items, isPro }: WardrobeGridProps) {
   const [recommendations, setRecommendations] = useState<ShoppingRecommendation[]>([]);
 
   useEffect(() => {
+    console.log("[WardrobeGrid] useEffect fired, isPro:", isPro, "items:", items.length);
     if (isPro || items.length < 3) return;
 
+    console.log("[WardrobeGrid] Fetching shopping recommendations...");
     fetch("/api/shopping-recommendations", { method: "POST" })
       .then((res) => res.json())
       .then((data) => {
+        console.log("[WardrobeGrid] Got response:", data);
         if (data.recommendations?.length) {
           setRecommendations(data.recommendations);
         }
       })
-      .catch(() => {
-        // Silent failure — grid shows items as normal
+      .catch((err) => {
+        console.error("[WardrobeGrid] Fetch error:", err);
       });
   }, [isPro, items.length]);
 
